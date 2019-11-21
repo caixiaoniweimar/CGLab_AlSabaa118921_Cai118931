@@ -8,7 +8,7 @@ class SceneGraph{
 
 public :
 
-	SceneGraph* getInstance();  // STATIC
+	static SceneGraph* getInstance();  // STATIC
 	string getName() const;
 	Node getRoot() const;
 	string printGraph();
