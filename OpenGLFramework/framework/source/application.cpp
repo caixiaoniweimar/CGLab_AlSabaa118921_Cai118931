@@ -3,10 +3,6 @@
 #include "utils.hpp"
 #include "window_handler.hpp"
 #include "shader_loader.hpp"
-#include "node.hpp"
-#include "scene_graph.hpp"
-#include "geometry_node.hpp"
-#include "camera_node.hpp"
 
 #include <glbinding/gl/gl.h>
 // use gl definitions from glbinding 

@@ -2,15 +2,20 @@
 
 
 Node::Node():
-	parent_{},
+	parent_{nullptr},
 	children_{},
-	name_{},
+	name_{"default name"},
 	path_{},
-	depth_{},
-	local_transformation_{},
-	world_transformation_{} {}
+	depth_{} {}
 
 Node::~Node(){}
+
+Node::Node(Node* const& parent, string const& name, string const& path, int const& depth):
+	parent_{parent},
+	children_{},
+	name_{name},
+	path_{path},
+	depth_{depth} {}
 
 Node* Node::getParent() const{
 	return parent_;
@@ -22,17 +27,17 @@ void Node::setParent(Node* const& parent){
 
 Node Node::getChildren(string const& name) const{
 
-	//list<Node>::iterator iter;
-	//auto iter;
-	for(auto iter=children_.begin(); iter!=children_.end(); iter++){
-		if( (*iter).getName().compare(name)==0 ){
-			return *iter;
+	for(auto iter=children_.begin(); iter!=children_.end(); iter++){  
+		if( (*iter)->getName().compare(name)==0 ){          // *iter = Node*
+			cout<< "Planet "+name+" will be returned."<<endl;
+			return *(*iter);
 		}
 	}
+	cout<<"Planet "+name+" can not be found."<<endl;
 	return Node();  // not NULL, return empty constructor
 }
 
-list<Node> Node::getChildrenList() const{
+list<Node*> Node::getChildrenList() const{
 	return children_;
 }
 
@@ -48,46 +53,40 @@ int Node::getDepth() const{
 	return depth_;
 }
 
-glm::mat4 Node::getLocalTransform() const{
+glm::fmat4 Node::getLocalTransform() const{
 	return local_transformation_;
 }
 
-void Node::setLocalTransform(glm::mat4 const& local_transformation){
+void Node::setLocalTransform(glm::fmat4 const& local_transformation){
 	this-> local_transformation_ = local_transformation;
 }
 
-glm::mat4 Node::getWorldTransform() const{
+glm::fmat4 Node::getWorldTransform() const{
 	return world_transformation_;
 }
 
-void Node::setWorldTransform(glm::mat4 const& world_transformation){
+void Node::setWorldTransform(glm::fmat4 const& world_transformation){
 	this-> world_transformation_ = world_transformation;
 } 
 
-void Node::addChildren(Node const& children){
+void Node::addChildren(Node* const& children){
 	children_.push_back(children);
 }
 
 Node Node::removeChildren(string const& name){
 	
-	list<Node>::iterator iter;
+	list<Node*>::iterator iter;
 	for(iter=children_.begin(); iter!=children_.end(); iter++){
-		if((*iter).getName().compare(name)==0){
-			Node node =*iter;    // QUESTION
-			children_.erase(iter);
-			return node;
+		if( (*iter)->getName().compare(name)==0){
+			auto node = *(*iter);    // (*iter) -> Node*; *(*iter) -> Node; 
+			children_.erase(iter); // delete specific Node* in the list<Node*>
+			// list.erase(iterator)
+			cout<<"Planet "+name+" will be deleted."<<endl;
+			return node;    // return deleted Node
 		}
-	}	
+	}
+	cout<<"Planet "+name+" can not be found."<<endl;	
 
 	return Node();
 }
 
-
-//get the Node according to the index
-/**
-	list<Node>::iterator iterator = children_.begin();
-	for(int i=0; i<index; i++){
-		++iterator;
-	}
-	return *iterator;
-*/

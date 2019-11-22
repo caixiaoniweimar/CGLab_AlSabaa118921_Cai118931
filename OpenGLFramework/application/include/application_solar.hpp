@@ -4,6 +4,10 @@
 #include "application.hpp"
 #include "model.hpp"
 #include "structs.hpp"
+#include "node.hpp"
+#include "scene_graph.hpp"
+#include "geometry_node.hpp"
+#include "camera_node.hpp"
 
 // gpu representation of model
 class ApplicationSolar : public Application {

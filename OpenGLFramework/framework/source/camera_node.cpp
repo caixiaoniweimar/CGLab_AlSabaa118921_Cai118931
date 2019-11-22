@@ -20,11 +20,11 @@ void CameraNode::setEnabled(bool const& isEnabled){
 	this-> isEnabled_ = isEnabled;
 }
 
-glm::mat4 CameraNode::getProjectionMatrix() const{
+glm::fmat4 CameraNode::getProjectionMatrix() const{
 	return projectionMatrix_;
 }
 
-void CameraNode::setProjectionMatrix(glm::mat4 const& matrix){
+void CameraNode::setProjectionMatrix(glm::fmat4 const& matrix){
 	this-> projectionMatrix_ = matrix;
 }
 
