@@ -6,6 +6,7 @@
 #include <string>
 using namespace std;
 #include <glm/glm.hpp>
+#include <glm/vec3.hpp>
 
 class Node{
 public:
@@ -27,9 +28,6 @@ public:
  	void setLocalTransform(glm::fmat4 const& local_transformation);
  	glm::fmat4 getWorldTransform() const;
  	void setWorldTransform(glm::fmat4 const& world_transformation);
- 	
- 	void addChildren(Node* const& children);
- 	Node removeChildren(string const& name);
 
  	float getSpeed() const;
  	void setSpeed(float const& speed);
@@ -39,6 +37,9 @@ public:
 
  	float getSize() const;
  	void setSize(float const& size);
+ 	
+ 	void addChildren(Node* const& children);
+ 	Node removeChildren(string const& name);
 
 private:
 	Node* parent_;
@@ -46,6 +47,12 @@ private:
 	string name_;
 	string path_;
 	int depth_;
+
+	// extra parameters
+	float speed_;
+	glm::fvec3 distance_;
+	float size_;
+	
 	glm::fmat4 local_transformation_{1,0,0,0,
 									 0,1,0,0,
 									 0,0,1,0,
@@ -54,10 +61,8 @@ private:
 									 0,1,0,0,
 									 0,0,1,0,
 									 0,0,0,1};
-
-// extra parameters
-	float speed_;
-	glm::fvec3 distance_;
-	float size_;
+/* set distance_ as fvec3:
+for instance, for method: glm::fmat4 translate(glm::fmat4 const& matrix, glm::fvec3 const& vector)
+*/
 };
 #endif

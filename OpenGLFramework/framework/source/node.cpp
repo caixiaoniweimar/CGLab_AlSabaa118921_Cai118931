@@ -67,7 +67,31 @@ glm::fmat4 Node::getWorldTransform() const{
 
 void Node::setWorldTransform(glm::fmat4 const& world_transformation){
 	this-> world_transformation_ = world_transformation;
-} 
+}
+
+float Node::getSpeed() const{
+	return speed_;
+}
+
+void Node::setSpeed(float const& speed){
+	this -> speed_ = speed;
+}
+
+glm::fvec3 Node::getDistance() const{
+	return distance_;
+}
+
+void Node::setDistance(glm::fvec3 const& distance){
+	this -> distance_ = distance;
+}
+
+float Node::getSize() const{
+	return size_;
+}
+
+void Node::setSize(float const& size){
+	this -> size_ = size;
+}
 
 void Node::addChildren(Node* const& children){
 	children_.push_back(children);
