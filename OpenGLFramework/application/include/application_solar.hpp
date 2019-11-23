@@ -45,7 +45,6 @@ class ApplicationSolar : public Application {
   // Assignment1 :
   vector<shared_ptr<GeometryNode>> initializeAllPlanets() const;
   void drawPlanet() const;
-
   glm::fmat4 update_planet_transform(shared_ptr<Node> node) const;
 
   SceneGraph* sceneGraph = SceneGraph::getInstance();

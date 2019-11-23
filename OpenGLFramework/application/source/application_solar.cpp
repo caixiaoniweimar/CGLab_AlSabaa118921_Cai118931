@@ -39,25 +39,8 @@ void ApplicationSolar::render() const {
   // bind shader to upload uniforms
   glUseProgram(m_shaders.at("planet").handle);
 
-  //initializeAllPlanets();
   drawPlanet();
   sceneGraph->printGraph();
-
-  /*glm::fmat4 model_matrix = glm::rotate(glm::fmat4{}, float(glfwGetTime()), glm::fvec3{0.0f, 1.0f, 0.0f});
-  model_matrix = glm::translate(model_matrix, glm::fvec3{0.0f, 0.0f, -1.0f});
-  glUniformMatrix4fv(m_shaders.at("planet").u_locs.at("ModelMatrix"),
-                     1, GL_FALSE, glm::value_ptr(model_matrix));
-
-  // extra matrix for normal transformation to keep them orthogonal to surface
-  glm::fmat4 normal_matrix = glm::inverseTranspose(glm::inverse(m_view_transform) * model_matrix);
-  glUniformMatrix4fv(m_shaders.at("planet").u_locs.at("NormalMatrix"),
-                     1, GL_FALSE, glm::value_ptr(normal_matrix));
-
-  // bind the VAO to draw
-  glBindVertexArray(planet_object.vertex_AO);
-
-  // draw bound vertex array using bound shader
-  glDrawElements(planet_object.draw_mode, planet_object.num_elements, model::INDEX.type, NULL);*/
 }
 
 void ApplicationSolar::uploadView() {
@@ -165,6 +148,7 @@ void ApplicationSolar::drawPlanet() const{
 
 }
 
+// Assignment 1
 vector<shared_ptr<GeometryNode>> ApplicationSolar::initializeAllPlanets() const{
    vector<shared_ptr<GeometryNode>> geometry_nodes;
     for(int i=0; i<10; i++){
@@ -195,6 +179,7 @@ vector<shared_ptr<GeometryNode>> ApplicationSolar::initializeAllPlanets() const{
     return geometry_nodes;
 }
 
+// Assignment 1
 glm::fmat4 ApplicationSolar::update_planet_transform(shared_ptr<Node> node) const{
   
   glm::fmat4 model_matrix = glm::fmat4{1.0f};
@@ -225,23 +210,58 @@ transformation of its parent.
 }
 
 
-
+// Assignment 1
 ///////////////////////////// callback functions for window events ////////////
 // handle key input
 void ApplicationSolar::keyCallback(int key, int action, int mods) {
-  if (key == GLFW_KEY_W  && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
-    m_view_transform = glm::translate(m_view_transform, glm::fvec3{0.0f, 0.0f, -0.1f});
-    uploadView();
-  }
-  else if (key == GLFW_KEY_S  && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
-    m_view_transform = glm::translate(m_view_transform, glm::fvec3{0.0f, 0.0f, 0.1f});
-    uploadView();
-  }
+    //zoom in: X
+    if (key == GLFW_KEY_X  && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
+        m_view_transform = glm::translate(m_view_transform, glm::fvec3{0.0f, 0.0f, -0.5f});
+        uploadView();
+    }
+    //zoom out: C
+    else if (key == GLFW_KEY_C  && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
+        m_view_transform = glm::translate(m_view_transform, glm::fvec3{0.0f, 0.0f, 0.5f});
+        uploadView();
+    }
+    //move left: A
+    else if(key == GLFW_KEY_A && (action == GLFW_PRESS || action == GLFW_REPEAT )){
+        m_view_transform = glm::translate(m_view_transform, glm::fvec3{0.2f, 0.0f, 0.0f});
+        uploadView();
+    }
+    //move right: D
+    else if(key == GLFW_KEY_D && (action == GLFW_PRESS || action == GLFW_REPEAT )){
+        m_view_transform = glm::translate(m_view_transform, glm::fvec3{-0.2f, 0.0f, 0.0f});
+        uploadView();
+    }
+    //move up: W
+    else if(key == GLFW_KEY_W && (action == GLFW_PRESS || action == GLFW_REPEAT )){
+        m_view_transform = glm::translate(m_view_transform, glm::fvec3{0.0f, -0.2f, 0.0f});
+        uploadView();
+    }
+    //move down: S
+    else if(key == GLFW_KEY_S && (action == GLFW_PRESS || action == GLFW_REPEAT )){
+        m_view_transform = glm::translate(m_view_transform, glm::fvec3{0.0f, 0.2f, 0.0f});
+        uploadView();
+    }
 }
 
 //handle delta mouse movement input
 void ApplicationSolar::mouseCallback(double pos_x, double pos_y) {
   // mouse handling
+    if (pos_x > 0){
+        m_view_transform = glm::rotate(m_view_transform, 0.003f,glm::fvec3{0.0f, 1.0f, 0.0f});
+    }
+    else if(pos_x < 0){
+        m_view_transform = glm::rotate(m_view_transform, 0.003f,glm::fvec3{0.0f, -1.0f, 0.0f});
+    }
+    if(pos_y > 0){
+        m_view_transform = glm::rotate(m_view_transform, 0.003f,glm::fvec3{1.0f, 0.0f, 0.0f});
+    } 
+    else if(pos_y < 0){
+        m_view_transform = glm::rotate(m_view_transform, 0.003f,glm::fvec3{-1.0f, 0.0f, 0.0f});
+    }
+    uploadView();
 }
 
 //handle resizing
@@ -255,10 +275,5 @@ void ApplicationSolar::resizeCallback(unsigned width, unsigned height) {
 
 // exe entry point
 int main(int argc, char* argv[]) {
-   cout<<"Test_______________"<<endl;
-   list<int> test;
-   test.push_back(1);
-   //cout<<test.count(test.begin(),test.end())<<"dwwwwew"<<endl;
-   //cout<<test.length()<<"dwdweq defwef"<<endl; 
   Application::run<ApplicationSolar>(argc, argv, 3, 2);
 }
