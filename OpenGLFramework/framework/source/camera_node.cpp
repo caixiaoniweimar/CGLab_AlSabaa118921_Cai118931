@@ -31,3 +31,9 @@ void CameraNode::setProjectionMatrix(glm::fmat4 const& matrix){
 void CameraNode::setPerspective(bool const& isPerspective) {
 	this -> isPerspective_ = isPerspective;
 }
+
+ostream& CameraNode::print(ostream& os) const {
+	Node::print(os);
+	os<<" Camera isPerspective: "<< isPerspective_<< " isEnabled_: "<< isEnabled_<<endl;
+	return os;
+}

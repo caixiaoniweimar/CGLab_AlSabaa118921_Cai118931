@@ -18,6 +18,8 @@ public:
 	glm::fmat4 getProjectionMatrix() const;
 	void setProjectionMatrix(glm::fmat4 const& matrix);  
 
+	ostream& print(ostream& os) const override;
+
 private:
 	bool isPerspective_;
 	bool isEnabled_;

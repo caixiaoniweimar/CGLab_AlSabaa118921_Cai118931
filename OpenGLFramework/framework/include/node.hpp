@@ -1,25 +1,28 @@
 #ifndef NODE_HPP
 #define NODE_HPP
 
+#include <cmath>
+#include <string>
 #include <list>
 #include <iostream>
-#include <string>
 using namespace std;
 #include <glm/glm.hpp>
 #include <glm/vec3.hpp>
+#include <memory>
 
 class Node{
 public:
 
 	Node();
 	~Node();
-	Node(Node* const& parent, string const& name, string const& path, int const& depth);
+	Node(shared_ptr<Node> const& parent, string const& name, string const& path, int const& depth, 
+		   float const& size, float const& speed, float const& distance);
 
-	Node* getParent() const;
-	void setParent(Node* const& parent);
+	shared_ptr<Node> getParent() const;
+	void setParent(shared_ptr<Node> const& parent);
 
 	Node getChildren(string const& name) const;
-	list<Node*> getChildrenList() const;
+	list<shared_ptr<Node>> getChildrenList() const;
 	
 	string getName() const;
 	string getPath() const;
@@ -38,12 +41,14 @@ public:
  	float getSize() const;
  	void setSize(float const& size);
  	
- 	void addChildren(Node* const& children);
+ 	void addChildren(shared_ptr<Node>const& children);
  	Node removeChildren(string const& name);
 
+ 	virtual ostream& print(ostream& os) const;
+
 private:
-	Node* parent_;
-	list<Node*> children_;
+	shared_ptr<Node> parent_;
+	list<shared_ptr<Node>> children_;
 	string name_;
 	string path_;
 	int depth_;
@@ -52,17 +57,18 @@ private:
 	float speed_;
 	glm::fvec3 distance_;
 	float size_;
-	
-	glm::fmat4 local_transformation_{1,0,0,0,
-									 0,1,0,0,
-									 0,0,1,0,
-									 0,0,0,1};
-	glm::fmat4 world_transformation_{1,0,0,0,
-									 0,1,0,0,
-									 0,0,1,0,
-									 0,0,0,1};
+
+	glm::fmat4 local_transformation_{1.0f, 0.0f, 0.0f, 0.0f,
+									 0.0f, 1.0f, 0.0f, 0.0f,
+									 0.0f, 0.0f, 1.0f, 0.0f,
+									 0.0f, 0.0f, 0.0f, 1.0f};
+	glm::fmat4 world_transformation_{1.0f, 0.0f, 0.0f, 0.0f,
+									 0.0f, 1.0f, 0.0f, 0.0f,
+									 0.0f, 0.0f, 1.0f, 0.0f,
+									 0.0f, 0.0f, 0.0f, 1.0f};
 /* set distance_ as fvec3:
 for instance, for method: glm::fmat4 translate(glm::fmat4 const& matrix, glm::fvec3 const& vector)
 */
 };
+ostream& operator<<(ostream& os, Node const& node);
 #endif
