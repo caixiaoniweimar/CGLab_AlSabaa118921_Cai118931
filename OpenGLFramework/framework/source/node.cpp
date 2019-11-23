@@ -35,7 +35,7 @@ void Node::setParent(shared_ptr<Node> const& parent){
 Node Node::getChildren(string const& name) const{
 
 	for(auto iter=children_.begin(); iter!=children_.end(); iter++){  
-		if( (*iter)->getName().compare(name)==0 ){          // *iter = Node*
+		if( (*iter)->getName()==name ){          // *iter = Node*
 			cout<< "Planet "<< name <<" will be returned."<<endl;
 			return *(*iter);
 		}

@@ -41,6 +41,10 @@ void ApplicationSolar::render() const {
 
   drawPlanet();
   sceneGraph->printGraph();
+
+  //test methods, both work
+  //scene_root->getChildren("sun").getChildren("mars");
+  //scene_root->getChildren("sun").removeChildren("mars");
 }
 
 void ApplicationSolar::uploadView() {
