@@ -253,18 +253,25 @@ void ApplicationSolar::keyCallback(int key, int action, int mods) {
 //handle delta mouse movement input
 void ApplicationSolar::mouseCallback(double pos_x, double pos_y) {
   // mouse handling
+
+    float angle_x = (float)pos_x/10;
+    float angle_y = (float)pos_y/10;
+
+
     if (pos_x > 0){
-        m_view_transform = glm::rotate(m_view_transform, 0.003f,glm::fvec3{0.0f, 1.0f, 0.0f});
+        m_view_transform = glm::rotate(m_view_transform, glm::radians(angle_x), glm::fvec3{0.0f, 1.0f, 0.0f});
     }
     else if(pos_x < 0){
-        m_view_transform = glm::rotate(m_view_transform, 0.003f,glm::fvec3{0.0f, -1.0f, 0.0f});
+        m_view_transform = glm::rotate(m_view_transform, -glm::radians(angle_x), glm::fvec3{0.0f, -1.0f, 0.0f});
     }
     if(pos_y > 0){
-        m_view_transform = glm::rotate(m_view_transform, 0.003f,glm::fvec3{1.0f, 0.0f, 0.0f});
+        m_view_transform = glm::rotate(m_view_transform, glm::radians(angle_y), glm::fvec3{1.0f, 0.0f, 0.0f});
     } 
     else if(pos_y < 0){
-        m_view_transform = glm::rotate(m_view_transform, 0.003f,glm::fvec3{-1.0f, 0.0f, 0.0f});
+        m_view_transform = glm::rotate(m_view_transform, -glm::radians(angle_y), glm::fvec3{-1.0f, 0.0f, 0.0f});
     }
+    //m_view_transform = glm::rotate(m_view_transform, glm::radians(angle_x), glm::fvec3{0.0f, 1.0f, 0.0f});
+    //m_view_transform = glm::rotate(m_view_transform, glm::radians(angle_y), glm::fvec3{1.0f, 0.0f, 0.0f});
     uploadView();
 }
 
