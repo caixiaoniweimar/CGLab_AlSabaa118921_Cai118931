@@ -122,6 +122,12 @@ void ApplicationSolar::initializeGeometry() {
 }
 
 // Assignment 1
+/*
+draw all Planets
+load model, 
+for each planet, set model and then update the model_matrix and normal_matrix;
+in render() apply drawPlanet() method
+*/
 void ApplicationSolar::drawPlanet() const{
 
   model planet_model = model_loader::obj(m_resource_path + "models/sphere.obj", model::NORMAL);
@@ -153,6 +159,17 @@ void ApplicationSolar::drawPlanet() const{
 }
 
 // Assignment 1
+/*
+initialize each planet in planets
+three kinds of situations:
+(1) planet.parent == root,
+this node is sun, add sun as child of scene_root 
+(2) planet.parent == sun,
+there are 8 nodes that their parent is sun.  add them as children of sun
+(3) planet.parent ==earth,
+only moon's parent is earth, add moon as child of earth, the depth of moon is 3. deepest
+return vector<shared_ptr<GeometryNode>>
+*/
 vector<shared_ptr<GeometryNode>> ApplicationSolar::initializeAllPlanets() const{
    vector<shared_ptr<GeometryNode>> geometry_nodes;
     for(int i=0; i<10; i++){
@@ -184,6 +201,28 @@ vector<shared_ptr<GeometryNode>> ApplicationSolar::initializeAllPlanets() const{
 }
 
 // Assignment 1
+/*
+For each planet, it's important to update their local transform and world transfrom
+The local coordinate system is only relative to a single model, 
+and the world coordinates are used to determine the position of the local coordinate system of each model.
+
+In SceneGraph: Every Node inherit the coordinate system of their ancestor.
+Then, every node defines its own local coordinate system, the root defines the world coordinate system.
+
+local transform:
+represent its position and orientation in relation to its parent node, can contain translation, rotation, and scaling information.
+
+local_transform = translationMatrix * rotationMatrix*scaleMatrix;
+
+world transform:
+need each node’s world transformation, to use as the model matrix in a vertex shader.
+we must go through the whole graph, starting from the root, 
+the world transformation for each node can be calculated by multiplying a node’s local transformation matrix 
+with the world transformation of its parent. 
+
+We store both local and world transformations for each planet, 
+so that we don't need to go through the tree every time. -> avoid a lot of unnecessary multiplications
+*/
 glm::fmat4 ApplicationSolar::update_planet_transform(shared_ptr<Node> node) const{
   
   glm::fmat4 model_matrix = glm::fmat4{1.0f};

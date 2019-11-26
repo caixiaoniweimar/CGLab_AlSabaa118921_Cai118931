@@ -43,6 +43,11 @@ class ApplicationSolar : public Application {
   void render() const;
 
   // Assignment1 :
+  /*
+  planets: sphere objects, difference between planets: size, rotation speed, distance to origin
+  implement planet struct which holds values for the needed properties,
+  store planets in a container as member of the applicationSolar class
+  */
   vector<shared_ptr<GeometryNode>> initializeAllPlanets() const;
   void drawPlanet() const;
   glm::fmat4 update_planet_transform(shared_ptr<Node> node) const;
