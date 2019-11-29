@@ -67,6 +67,21 @@ class ApplicationSolar : public Application {
     {"uranus", "sun", "root/sun/uranus",2, 0.2f, 0.8f, 21.0f},
     {"neptune", "sun", "root/sun/neptune",2, 0.1f, 0.5f, 25.0f}
   };
+  vector<shared_ptr<GeometryNode>> planets_pointers;
+  /*vector<GeometryNode> planets{ // parent, name, path, depth, size, speed, distance
+  
+     {scene_root, "sun", "root/sun", 1, 1.0f, 0.0f, 0.0f },
+     {make_shared<GeometryNode>(planets[0]), "mercury", "root/sun/mercury", 2, 0.90f, 0.7f, 5.0f  },
+     {make_shared<GeometryNode>(planets[0]), "venus",  "root/sun/venus", 2, 0.80f, 0.6f, 8.0f  },
+     {make_shared<GeometryNode>(planets[0]), "earth",  "root/sun/earth", 2, 0.70f, 0.5f, 11.0f},
+     {make_shared<GeometryNode>(planets[3]), "moon",  "root/sun/earth/moon", 3, 0.60f, 0.8f, 5.5f },
+     {make_shared<GeometryNode>(planets[0]), "mars",  "root/sun/mars",2, 0.5f, 0.65f, 15.0f  },
+     {make_shared<GeometryNode>(planets[0]), "jupiter",  "root/sun/jupiter", 2, 0.4f, 0.7f, 14.0f},
+     {make_shared<GeometryNode>(planets[0]), "saturn",  "root/sun/saturn", 2, 0.3f, 0.75f, 17.0f },
+     {make_shared<GeometryNode>(planets[0]), "uranus",  "root/sun/uranus",2, 0.2f, 0.8f, 21.0f},
+     {make_shared<GeometryNode>(planets[0]), "neptune",  "root/sun/neptune",2, 0.1f, 0.5f, 25.0f}
+     
+  };*/
 
  protected:
   void initializeShaderPrograms();

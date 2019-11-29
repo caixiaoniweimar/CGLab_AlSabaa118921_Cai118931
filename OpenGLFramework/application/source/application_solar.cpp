@@ -27,6 +27,7 @@ ApplicationSolar::ApplicationSolar(std::string const& resource_path)
 {
   initializeGeometry();
   initializeShaderPrograms();
+  planets_pointers=initializeAllPlanets();
 }
 
 ApplicationSolar::~ApplicationSolar() {
@@ -132,9 +133,7 @@ void ApplicationSolar::drawPlanet() const{
 
   model planet_model = model_loader::obj(m_resource_path + "models/sphere.obj", model::NORMAL);
 
-  vector<shared_ptr<GeometryNode>> geometry_nodes = initializeAllPlanets();
-  for(int i=0; i<9; i++){
-    auto p_node = geometry_nodes[i];
+  for(auto const& p_node: planets_pointers){
     p_node -> setGeometry(planet_model);
     glm::fmat4 model_matrix = update_planet_transform(p_node);
 
@@ -190,7 +189,8 @@ vector<shared_ptr<GeometryNode>> ApplicationSolar::initializeAllPlanets() const{
         geometry_nodes.push_back(p_node);
 
       }else if(planet.parent =="earth"){
-        auto p_earth = geometry_nodes[3];
+        auto p_earth = geometry_nodes[3]; 
+
         GeometryNode node{p_earth, planet.name, planet.path, planet.depth, planet.size, planet.speed, planet.distance};
         auto p_node = make_shared<GeometryNode>(node);
         p_earth -> addChildren(p_node);
@@ -297,7 +297,7 @@ void ApplicationSolar::mouseCallback(double pos_x, double pos_y) {
     float angle_y = (float)pos_y/10;
 
 
-    if (pos_x > 0){
+    /*if (pos_x > 0){
         m_view_transform = glm::rotate(m_view_transform, glm::radians(angle_x), glm::fvec3{0.0f, 1.0f, 0.0f});
     }
     else if(pos_x < 0){
@@ -308,9 +308,9 @@ void ApplicationSolar::mouseCallback(double pos_x, double pos_y) {
     } 
     else if(pos_y < 0){
         m_view_transform = glm::rotate(m_view_transform, -glm::radians(angle_y), glm::fvec3{-1.0f, 0.0f, 0.0f});
-    }
-    //m_view_transform = glm::rotate(m_view_transform, glm::radians(angle_x), glm::fvec3{0.0f, 1.0f, 0.0f});
-    //m_view_transform = glm::rotate(m_view_transform, glm::radians(angle_y), glm::fvec3{1.0f, 0.0f, 0.0f});
+    }*/
+    m_view_transform = glm::rotate(m_view_transform, glm::radians(angle_x), glm::fvec3{0.0f, 1.0f, 0.0f});
+    m_view_transform = glm::rotate(m_view_transform, glm::radians(angle_y), glm::fvec3{1.0f, 0.0f, 0.0f});
     uploadView();
 }
 

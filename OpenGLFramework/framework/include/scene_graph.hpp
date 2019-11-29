@@ -22,7 +22,7 @@ private:
 	~SceneGraph();
 	void setName(string const& name);
 	void setRoot(shared_ptr<Node> const& node);
-	void printNode(shared_ptr<Node> const& node, int const& depth);
+	void printNode(shared_ptr<Node> const& node);
 
 private:
 	string name_;

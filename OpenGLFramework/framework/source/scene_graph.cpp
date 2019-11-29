@@ -35,11 +35,11 @@ void SceneGraph::setRoot(shared_ptr<Node>  const& node){
 }
 
 void SceneGraph::printGraph(){
-	cout<<"check"<<endl;
-	printNode(root_, root_->getDepth());
+	printNode(root_);
 }
 
-void SceneGraph::printNode(shared_ptr<Node> const& node, int const& depth){
+void SceneGraph::printNode(shared_ptr<Node> const& node){
+	int depth = node -> getDepth();
 	for(int i=0; i<depth; ++i){
 		cout<<" ";
 	}
@@ -47,7 +47,7 @@ void SceneGraph::printNode(shared_ptr<Node> const& node, int const& depth){
 
 	list<shared_ptr<Node>> children_list = node->getChildrenList();
 	for(auto const& child: children_list){
-		printNode(child, depth+1);
+		printNode(child);
 	}
 }
 
