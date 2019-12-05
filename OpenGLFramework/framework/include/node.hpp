@@ -17,6 +17,7 @@ public:
 	~Node();
 	Node(shared_ptr<Node> const& parent, string const& name, string const& path, int const& depth, 
 		   float const& size, float const& speed, float const& distance);
+	Node(shared_ptr<Node> const& parent, string const& name, string const& path, float const& speed);
 
 	shared_ptr<Node> getParent() const;
 	void setParent(shared_ptr<Node> const& parent);

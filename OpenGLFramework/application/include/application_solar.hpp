@@ -12,16 +12,23 @@
 #include <vector>
 using namespace std;
 
+/*
+planet{
+  holdernode: 
+  geometrynode:
+}
+*/
 
 // implement planet struct which holds values for the needed properties
 struct planet {
-  string name;
   string parent;
+  string name;
   string path;
   int depth;
   float size;
   float speed;
   float distance;
+  float speed_relative_to_center;
 };
 
 // gpu representation of model
@@ -55,33 +62,19 @@ class ApplicationSolar : public Application {
   SceneGraph* sceneGraph = SceneGraph::getInstance();
   shared_ptr<Node> scene_root = sceneGraph -> getRoot();
 
-  vector<planet> planets{   // name, parent, size, speed, distance
-    {"sun", "root", "root/sun", 1, 1.0f, 0.0f, 0.0f },
-    {"mercury", "sun", "root/sun/mercury", 2, 0.90f, 0.7f, 5.0f  },
-    {"venus", "sun", "root/sun/venus", 2, 0.80f, 0.6f, 8.0f  },
-    {"earth", "sun", "root/sun/earth", 2, 0.70f, 0.5f, 11.0f},
-    {"moon", "earth", "root/sun/earth/moon", 3, 0.60f, 0.8f, 5.5f },
-    {"mars", "sun", "root/sun/mars",2, 0.5f, 0.65f, 15.0f  },
-    {"jupiter", "sun", "root/sun/jupiter", 2, 0.4f, 0.7f, 14.0f},
-    {"saturn", "sun", "root/sun/saturn", 2, 0.3f, 0.75f, 17.0f },
-    {"uranus", "sun", "root/sun/uranus",2, 0.2f, 0.8f, 21.0f},
-    {"neptune", "sun", "root/sun/neptune",2, 0.1f, 0.5f, 25.0f}
+  vector<planet> planets{   // name, parent, depth, size, speed, distance, speed_relative_to_center
+    {"sun", "root", "root/sun", 1, 1.0f, 0.0f, 0.0f,  0.0f},
+    {"mercury", "mercury_holder", "root/mercury_holder/mercury", 2, 0.90f, 0.7f, 5.0f, 0.10f},
+    {"venus", "venus_holder", "root/venus_holder/venus", 2, 0.80f, 0.6f, 8.0f, 0.2f  },
+    {"earth","earth_holder", "root/earth_holder/earth", 2, 0.70f, 0.5f, 11.0f, 0.3f},
+    {"moon", "earth", "root/earth_holder/moon_holder/moon", 3, 0.60f, 0.8f, 5.5f, 0.4f },
+    {"mars", "mars_holder", "root/mars_holder/mars",2, 0.5f, 0.65f, 15.0f, 0.5f  },
+    {"jupiter","jupiter_holder", "root/jupiter_holder/jupiter", 2, 0.4f, 0.7f, 14.0f, 0.6f},
+    {"saturn", "saturn_holder","root/saturn_holder/saturn", 2, 0.3f, 0.75f, 17.0f, 0.7f },
+    {"uranus","uranus_holder","root/uranus_holder/uranus",2, 0.2f, 0.8f, 21.0f, 0.8f},
+    {"neptune","neptune_holder","root/neptune_holder/neptune",2, 0.1f, 0.5f, 25.0f, 0.9f}
   };
   vector<shared_ptr<GeometryNode>> planets_pointers;
-  /*vector<GeometryNode> planets{ // parent, name, path, depth, size, speed, distance
-  
-     {scene_root, "sun", "root/sun", 1, 1.0f, 0.0f, 0.0f },
-     {make_shared<GeometryNode>(planets[0]), "mercury", "root/sun/mercury", 2, 0.90f, 0.7f, 5.0f  },
-     {make_shared<GeometryNode>(planets[0]), "venus",  "root/sun/venus", 2, 0.80f, 0.6f, 8.0f  },
-     {make_shared<GeometryNode>(planets[0]), "earth",  "root/sun/earth", 2, 0.70f, 0.5f, 11.0f},
-     {make_shared<GeometryNode>(planets[3]), "moon",  "root/sun/earth/moon", 3, 0.60f, 0.8f, 5.5f },
-     {make_shared<GeometryNode>(planets[0]), "mars",  "root/sun/mars",2, 0.5f, 0.65f, 15.0f  },
-     {make_shared<GeometryNode>(planets[0]), "jupiter",  "root/sun/jupiter", 2, 0.4f, 0.7f, 14.0f},
-     {make_shared<GeometryNode>(planets[0]), "saturn",  "root/sun/saturn", 2, 0.3f, 0.75f, 17.0f },
-     {make_shared<GeometryNode>(planets[0]), "uranus",  "root/sun/uranus",2, 0.2f, 0.8f, 21.0f},
-     {make_shared<GeometryNode>(planets[0]), "neptune",  "root/sun/neptune",2, 0.1f, 0.5f, 25.0f}
-     
-  };*/
 
  protected:
   void initializeShaderPrograms();

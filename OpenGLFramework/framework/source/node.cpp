@@ -24,6 +24,18 @@ Node::Node(shared_ptr<Node> const& parent, string const& name, string const& pat
 	distance_{glm::fvec3{distance, 0.0f, 0.0f}},
 	size_{size} {}
 
+//constructor for holder_node, parent=root
+Node::Node(shared_ptr<Node> const& parent, string const& name, string const& path,float const& speed):
+	parent_{parent},
+	children_{},
+	name_{name},
+	path_{path},
+	depth_{1},
+	speed_{0.0f},
+	distance_{},
+	speed_{speed},
+	size_{0.0f} {}
+
 shared_ptr<Node> Node::getParent() const{
 	return parent_;
 }

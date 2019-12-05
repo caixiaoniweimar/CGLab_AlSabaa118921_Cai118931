@@ -180,20 +180,34 @@ vector<shared_ptr<GeometryNode>> ApplicationSolar::initializeAllPlanets() const{
         scene_root -> addChildren(p_sun);
         geometry_nodes.push_back(p_sun);
   
-      }else if(planet.parent=="sun"){
+      }else if(planet.parent =="earth"){ // add moon
 
-        auto p_sun = geometry_nodes[0];
-        GeometryNode node{p_sun, planet.name, planet.path, planet.depth, planet.size, planet.speed, planet.distance};
-        auto p_node = make_shared<GeometryNode>(node);
-        p_sun -> addChildren(p_node);
-        geometry_nodes.push_back(p_node);
-
-      }else if(planet.parent =="earth"){
         auto p_earth = geometry_nodes[3]; 
+        string parent_name = p_earth -> getParent() -> getName();
+        print(parent_name)
+        Node holder_node{p_earth->getParent(), planet.name+"_holder", "root/"+parent_name+"/"+planet.name+"_holder", planet.speed_relative_to_center};
+        auto const p_holder_node = make_shared<Node>(holder_node);
+        p_earth->getParent()->addChildren(p_holder_node);
+        holder_node.setLocalTransform( glm::rotate(holder_node.getLocalTransfrom(), float(glfwGetTime())*holder_node.getSpeed(), glm::fvec3{0.0f, 1.0f, 0.0f}) );
+        holder_node.setWorldTransform( (holder_node.getParent()-> getWorldTransform())*holder_node.getLocalTransfrom() );
 
-        GeometryNode node{p_earth, planet.name, planet.path, planet.depth, planet.size, planet.speed, planet.distance};
-        auto p_node = make_shared<GeometryNode>(node);
-        p_earth -> addChildren(p_node);
+        GeometryNode node{p_holder_node, planet.name, planet.path, planet.depth, planet.size, planet.speed, planet.distance};
+        auto const& p_node = make_shared<GeometryNode>(node);
+        p_holder_node -> addChildren(p_node);
+        geometry_nodes.push_back(p_node);
+      }else{ //other planets except sun and earth
+        //create a holderNode for each planet, parent, name, path, speed
+        //root add this holderNode as scene's child, set local/worldTransform for holder_node
+        //create planet_node, add this planet_node as holderNode's child
+        Node holder_node{scene_root, planet.name+"_holder", "root/"+planet.name+"_holder", planet.speed_relative_to_center};
+        auto const p_holder_node = make_shared<Node>(holder_node);
+        scene_root -> addChildren(p_holder_node);
+        holder_node.setLocalTransform( glm::rotate(holder_node.getLocalTransfrom(), float(glfwGetTime())*holder_node.getSpeed(), glm::fvec3{0.0f, 1.0f, 0.0f}) );
+        holder_node.setWorldTransform( (scene_root -> getWorldTransform())*holder_node.getLocalTransfrom() );
+
+        GeometryNode node{p_holder_node, planet.name, planet.path, planet.depth, planet.size, planet.speed, planet.distance};
+        auto const& p_node = make_shared<GeometryNode>(node);
+        p_holder_node -> addChildren(p_node);
         geometry_nodes.push_back(p_node);
       }
     }
