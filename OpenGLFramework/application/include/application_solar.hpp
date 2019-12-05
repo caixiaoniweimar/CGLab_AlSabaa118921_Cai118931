@@ -21,8 +21,8 @@ planet{
 
 // implement planet struct which holds values for the needed properties
 struct planet {
-  string parent;
   string name;
+  string parent;
   string path;
   int depth;
   float size;

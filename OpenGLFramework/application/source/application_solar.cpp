@@ -184,12 +184,12 @@ vector<shared_ptr<GeometryNode>> ApplicationSolar::initializeAllPlanets() const{
 
         auto p_earth = geometry_nodes[3]; 
         string parent_name = p_earth -> getParent() -> getName();
-        print(parent_name)
         Node holder_node{p_earth->getParent(), planet.name+"_holder", "root/"+parent_name+"/"+planet.name+"_holder", planet.speed_relative_to_center};
         auto const p_holder_node = make_shared<Node>(holder_node);
+        p_holder_node -> setDapth(2);
         p_earth->getParent()->addChildren(p_holder_node);
-        holder_node.setLocalTransform( glm::rotate(holder_node.getLocalTransfrom(), float(glfwGetTime())*holder_node.getSpeed(), glm::fvec3{0.0f, 1.0f, 0.0f}) );
-        holder_node.setWorldTransform( (holder_node.getParent()-> getWorldTransform())*holder_node.getLocalTransfrom() );
+        holder_node.setLocalTransform( glm::rotate(holder_node.getLocalTransform(), float(glfwGetTime())*holder_node.getSpeed(), glm::fvec3{0.0f, 1.0f, 0.0f}) );
+        holder_node.setWorldTransform( (holder_node.getParent()-> getWorldTransform())*holder_node.getLocalTransform() );
 
         GeometryNode node{p_holder_node, planet.name, planet.path, planet.depth, planet.size, planet.speed, planet.distance};
         auto const& p_node = make_shared<GeometryNode>(node);
@@ -202,8 +202,8 @@ vector<shared_ptr<GeometryNode>> ApplicationSolar::initializeAllPlanets() const{
         Node holder_node{scene_root, planet.name+"_holder", "root/"+planet.name+"_holder", planet.speed_relative_to_center};
         auto const p_holder_node = make_shared<Node>(holder_node);
         scene_root -> addChildren(p_holder_node);
-        holder_node.setLocalTransform( glm::rotate(holder_node.getLocalTransfrom(), float(glfwGetTime())*holder_node.getSpeed(), glm::fvec3{0.0f, 1.0f, 0.0f}) );
-        holder_node.setWorldTransform( (scene_root -> getWorldTransform())*holder_node.getLocalTransfrom() );
+        holder_node.setLocalTransform( glm::rotate(holder_node.getLocalTransform(), float(glfwGetTime())*holder_node.getSpeed(), glm::fvec3{0.0f, 1.0f, 0.0f}) );
+        holder_node.setWorldTransform( (scene_root -> getWorldTransform())*holder_node.getLocalTransform() );
 
         GeometryNode node{p_holder_node, planet.name, planet.path, planet.depth, planet.size, planet.speed, planet.distance};
         auto const& p_node = make_shared<GeometryNode>(node);
@@ -309,20 +309,7 @@ void ApplicationSolar::mouseCallback(double pos_x, double pos_y) {
 
     float angle_x = (float)pos_x/10;
     float angle_y = (float)pos_y/10;
-
-
-    /*if (pos_x > 0){
-        m_view_transform = glm::rotate(m_view_transform, glm::radians(angle_x), glm::fvec3{0.0f, 1.0f, 0.0f});
-    }
-    else if(pos_x < 0){
-        m_view_transform = glm::rotate(m_view_transform, -glm::radians(angle_x), glm::fvec3{0.0f, -1.0f, 0.0f});
-    }
-    if(pos_y > 0){
-        m_view_transform = glm::rotate(m_view_transform, glm::radians(angle_y), glm::fvec3{1.0f, 0.0f, 0.0f});
-    } 
-    else if(pos_y < 0){
-        m_view_transform = glm::rotate(m_view_transform, -glm::radians(angle_y), glm::fvec3{-1.0f, 0.0f, 0.0f});
-    }*/
+    
     m_view_transform = glm::rotate(m_view_transform, glm::radians(angle_x), glm::fvec3{0.0f, 1.0f, 0.0f});
     m_view_transform = glm::rotate(m_view_transform, glm::radians(angle_y), glm::fvec3{1.0f, 0.0f, 0.0f});
     uploadView();

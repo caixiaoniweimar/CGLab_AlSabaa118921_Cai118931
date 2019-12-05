@@ -32,8 +32,7 @@ Node::Node(shared_ptr<Node> const& parent, string const& name, string const& pat
 	path_{path},
 	depth_{1},
 	speed_{0.0f},
-	distance_{},
-	speed_{speed},
+	distance_{glm::fvec3{0.0f,0.0f,0.0f}},
 	size_{0.0f} {}
 
 shared_ptr<Node> Node::getParent() const{
@@ -67,6 +66,10 @@ string Node::getName() const{
 string Node::getPath() const{
 	return path_;
 } 
+
+void Node::setDapth(int const& depth){
+	this -> depth_ = depth;
+}
 
 int Node::getDepth() const{
 	return depth_;

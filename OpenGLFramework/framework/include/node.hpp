@@ -28,6 +28,7 @@ public:
 	string getName() const;
 	string getPath() const;
  	int getDepth() const;
+ 	void setDapth(int const& depth);
  	glm::fmat4 getLocalTransform() const;
  	void setLocalTransform(glm::fmat4 const& local_transformation);
  	glm::fmat4 getWorldTransform() const;
