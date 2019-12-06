@@ -38,6 +38,7 @@ public:
  	void setSpeed(float const& speed);
  	
  	glm::fvec3 getDistance() const;
+ 	float getDistanceX() const;
  	void setDistance(glm::fvec3 const& distance);
 
  	float getSize() const;

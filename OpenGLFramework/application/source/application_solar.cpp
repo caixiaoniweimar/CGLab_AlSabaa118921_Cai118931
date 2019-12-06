@@ -19,29 +19,47 @@ using namespace gl;
 
 #include <iostream>
 
+const int star_num = 5000;
+const int orbit_point_num = 360000;
+
 ApplicationSolar::ApplicationSolar(std::string const& resource_path)
  :Application{resource_path}
  ,planet_object{}
+ ,star_object{}
  ,m_view_transform{glm::translate(glm::fmat4{}, glm::fvec3{0.0f, 0.0f, 4.0f})}
  ,m_view_projection{utils::calculate_projection_matrix(initial_aspect_ratio)}
 {
   initializeGeometry();
   initializeShaderPrograms();
+  //Assignment 1
   planets_pointers=initializeAllPlanets();
+  //Assignment 2
+  initializeAllStars();
+  initializeAllOrbits();
 }
 
 ApplicationSolar::~ApplicationSolar() {
   glDeleteBuffers(1, &planet_object.vertex_BO);
   glDeleteBuffers(1, &planet_object.element_BO);
   glDeleteVertexArrays(1, &planet_object.vertex_AO);
+
+  // Assignment2 delete/release two buffer object(VBO,IBO) and array object(VAO)
+  glDeleteBuffers(1, &star_object.vertex_BO);
+  glDeleteVertexArrays(1, &star_object.vertex_AO);
+
+  glDeleteBuffers(1, &orbit_object.vertex_BO);
+  glDeleteVertexArrays(1, &orbit_object.vertex_AO);
 }
 
-void ApplicationSolar::render() const {
-  // bind shader to upload uniforms
-  glUseProgram(m_shaders.at("planet").handle);
+void ApplicationSolar::render() const{
 
+  //Assignment 1
   drawPlanet();
   sceneGraph->printGraph();
+
+  //Assignment 2
+  drawStar();
+  drawOrbit();
 
   //test methods, both work
   //scene_root->getChildren("sun").getChildren("mars");
@@ -52,20 +70,39 @@ void ApplicationSolar::uploadView() {
   // vertices are transformed in camera space, so camera transform must be inverted
   glm::fmat4 view_matrix = glm::inverse(m_view_transform);
   // upload matrix to gpu
+  glUseProgram(m_shaders.at("planet").handle);
   glUniformMatrix4fv(m_shaders.at("planet").u_locs.at("ViewMatrix"),
                      1, GL_FALSE, glm::value_ptr(view_matrix));
+
+  glUseProgram(m_shaders.at("star").handle);
+  glUniformMatrix4fv(m_shaders.at("star").u_locs.at("ViewMatrix"),
+                     1, GL_FALSE, glm::value_ptr(view_matrix));
+
+  glUseProgram(m_shaders.at("orbit").handle);
+  glUniformMatrix4fv(m_shaders.at("orbit").u_locs.at("ViewMatrix"),
+                     1, GL_FALSE, glm::value_ptr(view_matrix));
+
 }
 
 void ApplicationSolar::uploadProjection() {
   // upload matrix to gpu
+  //use glUseProgramm to bind shader programm in each function
+  glUseProgram(m_shaders.at("planet").handle);
   glUniformMatrix4fv(m_shaders.at("planet").u_locs.at("ProjectionMatrix"),
+                     1, GL_FALSE, glm::value_ptr(m_view_projection));
+
+  glUseProgram(m_shaders.at("star").handle);
+  glUniformMatrix4fv(m_shaders.at("star").u_locs.at("ProjectionMatrix"),
+                     1, GL_FALSE, glm::value_ptr(m_view_projection));
+
+  glUseProgram(m_shaders.at("orbit").handle);
+  glUniformMatrix4fv(m_shaders.at("orbit").u_locs.at("ProjectionMatrix"),
                      1, GL_FALSE, glm::value_ptr(m_view_projection));
 }
 
 // update uniform locations
 void ApplicationSolar::uploadUniforms() { 
   // bind shader to which to upload unforms
-  glUseProgram(m_shaders.at("planet").handle);
   // upload uniform values to new locations
   uploadView();
   uploadProjection();
@@ -82,53 +119,68 @@ void ApplicationSolar::initializeShaderPrograms() {
   m_shaders.at("planet").u_locs["ModelMatrix"] = -1;
   m_shaders.at("planet").u_locs["ViewMatrix"] = -1;
   m_shaders.at("planet").u_locs["ProjectionMatrix"] = -1;
+
+  // Assignment 2
+  // use predefined vertex shader and fragment shader
+  m_shaders.emplace("star", shader_program{{{ {GL_VERTEX_SHADER,m_resource_path + "shaders/star.vert"},
+                                              {GL_FRAGMENT_SHADER, m_resource_path + "shaders/star.frag"}}}});
+
+  m_shaders.at("star").u_locs["ViewMatrix"] = -1;
+  m_shaders.at("star").u_locs["ProjectionMatrix"] = -1;
+
+  m_shaders.emplace("orbit", shader_program{{{ {GL_VERTEX_SHADER,m_resource_path + "shaders/orbit.vert"},
+                                              {GL_FRAGMENT_SHADER, m_resource_path + "shaders/orbit.frag"}}}});
+  m_shaders.at("orbit").u_locs["OrbitTransformMatrix"] = -1;
+  m_shaders.at("orbit").u_locs["ViewMatrix"] = -1;
+  m_shaders.at("orbit").u_locs["ProjectionMatrix"] = -1;
+
 }
 
 // load models
 void ApplicationSolar::initializeGeometry() {
-  model planet_model = model_loader::obj(m_resource_path + "models/sphere.obj", model::NORMAL);
+    model planet_model = model_loader::obj(m_resource_path + "models/sphere.obj", model::NORMAL);
   
-  // Initialise Vertex Array Object
+    // Initialise Vertex Array Object
 
-  // generate vertex array object
-  glGenVertexArrays(1, &planet_object.vertex_AO);
-  // bind the array for attaching buffers
-  glBindVertexArray(planet_object.vertex_AO);
+    // generate vertex array object
+    glGenVertexArrays(1, &planet_object.vertex_AO);
+    // bind the array for attaching buffers
+    glBindVertexArray(planet_object.vertex_AO);
 
-  // Initialise Vertex Buffer Object and load data
+    // Initialise Vertex Buffer Object and load data
 
-  // generate generic buffer
-  glGenBuffers(1, &planet_object.vertex_BO);
-  // bind this as an vertex array buffer containing all attributes
-  glBindBuffer(GL_ARRAY_BUFFER, planet_object.vertex_BO);
-  // configure currently bound array buffer
-  // creates and initializes a buffer object's data store: size, data, usage
-  glBufferData(GL_ARRAY_BUFFER, sizeof(float) * planet_model.data.size(), planet_model.data.data(), GL_STATIC_DRAW);
+    // generate generic buffer
+    glGenBuffers(1, &planet_object.vertex_BO);
+    // bind this as an vertex array buffer containing all attributes
+    glBindBuffer(GL_ARRAY_BUFFER, planet_object.vertex_BO);
+    // configure currently bound array buffer
+    // creates and initializes a buffer object's data store: size, data, usage
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * planet_model.data.size(), planet_model.data.data(), GL_STATIC_DRAW);
 
-  // Specify(activate, connect and set format) the Attributes
+    // Specify(activate, connect and set format) the Attributes
 
-  // activate first attribute on gpu
-  glEnableVertexAttribArray(0);
-  // first attribute is 3 floats with no offset & stride
-  glVertexAttribPointer(0, model::POSITION.components, model::POSITION.type, GL_FALSE, planet_model.vertex_bytes, planet_model.offsets[model::POSITION]);
-  // activate second attribute on gpu
-  glEnableVertexAttribArray(1);
-  // second attribute is 3 floats with no offset & stride
-  glVertexAttribPointer(1, model::NORMAL.components, model::NORMAL.type, GL_FALSE, planet_model.vertex_bytes, planet_model.offsets[model::NORMAL]);
+    // activate first attribute on gpu
+    glEnableVertexAttribArray(0);
+    // first attribute is 3 floats with no offset & stride
+    glVertexAttribPointer(0, model::POSITION.components, model::POSITION.type, GL_FALSE, planet_model.vertex_bytes, planet_model.offsets[model::POSITION]);
+    // activate second attribute on gpu
+    glEnableVertexAttribArray(1);
+    // second attribute is 3 floats with no offset & stride
+    glVertexAttribPointer(1, model::NORMAL.components, model::NORMAL.type, GL_FALSE, planet_model.vertex_bytes, planet_model.offsets[model::NORMAL]);
 
-  // Define Vertex Indices(optional)
+    // Define Vertex Indices(optional)
 
-  // generate generic buffer
-  glGenBuffers(1, &planet_object.element_BO);
-  // bind this as an vertex array buffer containing all attributes
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, planet_object.element_BO);
-  // configure currently bound array buffer
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, model::INDEX.size * planet_model.indices.size(), planet_model.indices.data(), GL_STATIC_DRAW);
+    // generate generic buffer
+    glGenBuffers(1, &planet_object.element_BO);
+    // bind this as an vertex array buffer containing all attributes
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, planet_object.element_BO);
+    // configure currently bound array buffer
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, model::INDEX.size * planet_model.indices.size(), planet_model.indices.data(), GL_STATIC_DRAW);
 
-  // store type of primitive to draw
-  planet_object.draw_mode = GL_TRIANGLES;
-  // transfer number of indices to model object 
-  planet_object.num_elements = GLsizei(planet_model.indices.size());
+    // store type of primitive to draw
+    planet_object.draw_mode = GL_TRIANGLES;
+    // transfer number of indices to model object 
+    planet_object.num_elements = GLsizei(planet_model.indices.size());
 }
 
 // Assignment 1
@@ -149,6 +201,8 @@ void ApplicationSolar::drawPlanet() const{
     //extra matrix for normal transformation to keep them orthogonal to surface
     glm::fmat4 normal_matrix = glm::inverseTranspose(glm::inverse(m_view_transform)* model_matrix);
 
+    //bind shader to upload uniforms
+    glUseProgram(m_shaders.at("planet").handle);
     //give matrices to shaders
     glUniformMatrix4fv(m_shaders.at("planet").u_locs.at("ModelMatrix"),
                  1, GL_FALSE, glm::value_ptr(model_matrix));
@@ -183,7 +237,7 @@ return vector<shared_ptr<GeometryNode>>
 */
 vector<shared_ptr<GeometryNode>> ApplicationSolar::initializeAllPlanets() const{
    vector<shared_ptr<GeometryNode>> geometry_nodes;
-    for(int i=0; i<10; i++){
+    for(int i=0; i<planets.size(); i++){
       planet planet = planets[i];
       if(planet.parent == "root"){
 
@@ -195,17 +249,18 @@ vector<shared_ptr<GeometryNode>> ApplicationSolar::initializeAllPlanets() const{
       }else if(planet.parent =="earth"){ // add moon
 
         auto p_earth = geometry_nodes[3]; 
-        string parent_name = p_earth -> getParent() -> getName();
-        Node holder_node{p_earth->getParent(), planet.name+"_holder", "root/"+parent_name+"/"+planet.name+"_holder", planet.speed_relative_to_center};
-        auto const p_holder_node = make_shared<Node>(holder_node);
-        p_holder_node -> setDapth(2);
-        p_earth->getParent()->addChildren(p_holder_node);
-        holder_node.setLocalTransform( glm::rotate(holder_node.getLocalTransform(), float(glfwGetTime())*holder_node.getSpeed(), glm::fvec3{0.0f, 1.0f, 0.0f}) );
-        holder_node.setWorldTransform( (holder_node.getParent()-> getWorldTransform())*holder_node.getLocalTransform() );
+        //string parent_name = p_earth -> getParent() -> getName();
+        //Node holder_node{p_earth->getParent(), planet.name+"_holder", "root/"+parent_name+"/"+planet.name+"_holder", planet.speed_relative_to_center};
+        //auto const p_holder_node = make_shared<Node>(holder_node);
+        //p_holder_node -> setDapth(2);
+        //p_earth->getParent()->addChildren(p_holder_node);
+        //holder_node.setLocalTransform( glm::rotate(holder_node.getLocalTransform(), float(glfwGetTime())*holder_node.getSpeed(), glm::fvec3{0.0f, 1.0f, 0.0f}) );
+        //holder_node.setWorldTransform( (holder_node.getParent()-> getWorldTransform())*holder_node.getLocalTransform() );
 
-        GeometryNode node{p_holder_node, planet.name, planet.path, planet.depth, planet.size, planet.speed, planet.distance};
+        GeometryNode node{p_earth, planet.name, planet.path, planet.depth, planet.size, planet.speed, planet.distance};
         auto const& p_node = make_shared<GeometryNode>(node);
-        p_holder_node -> addChildren(p_node);
+        //p_holder_node -> addChildren(p_node);
+        p_earth -> addChildren(p_node);
         geometry_nodes.push_back(p_node);
       }else{ //other planets except sun and earth
         //create a holderNode for each planet, parent, name, path, speed
@@ -278,6 +333,182 @@ transformation of its parent.
   return model_matrix;
 }
 
+// Assignment 2
+
+void ApplicationSolar::initializeAllStars(){
+    //predefined star_num
+    //generate stars at random positions x,y,z and random colors r,g,b
+
+    /* [low,up]
+    low+(up-low)*rand()/(RAND_MAX);
+    */
+    float position_low=-100.0;
+    float position_up = 100.0;
+
+    float color_low = 0.8;
+    float color_up = 1.0;
+
+    //generate position x,y,z between [50,100] 
+    for(int i=0; i<star_num; ++i){
+      GLfloat x = position_low+(position_up-position_low)*(rand()/(float)RAND_MAX);
+      stars_container.push_back(x);
+      GLfloat y = position_low+(position_up-position_low)*(rand()/(float)RAND_MAX);
+      stars_container.push_back(y);
+      GLfloat z = position_low+(position_up-position_low)*(rand()/(float)RAND_MAX);
+      stars_container.push_back(z);
+
+    //generate color between [0.5,1.0], bright
+      GLfloat r = color_low+(color_up-color_low)*(rand()/(float)RAND_MAX);
+      stars_container.push_back(r);
+      GLfloat g = color_low+(color_up-color_low)*(rand()/(float)RAND_MAX);
+      stars_container.push_back(g);
+      GLfloat b = color_low+(color_up-color_low)*(rand()/(float)RAND_MAX);
+      stars_container.push_back(b);
+    }
+
+    // Initialise Vertex Array Object
+
+    // generate vertex array object
+    glGenVertexArrays(1, &star_object.vertex_AO);
+    // bind the array for attaching buffers
+    glBindVertexArray(star_object.vertex_AO);
+
+    // Initialise Vertex Buffer Object and load data
+
+    // generate generic buffer
+    glGenBuffers(1, &star_object.vertex_BO);
+    // bind this as an vertex array buffer containing all attributes
+    glBindBuffer(GL_ARRAY_BUFFER, star_object.vertex_BO);
+    // configure currently bound array buffer
+    // creates and initializes a buffer object's data store: size, data, usage
+    //GLsizeiptr size; const void * data, Glenum usage
+    glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(sizeof(float) * stars_container.size()), stars_container.data(), GL_STATIC_DRAW);
+
+    // Specify(activate, connect and set format) the Attributes
+
+    // activate first attribute on gpu
+    glEnableVertexAttribArray(0);
+    // first attribute is 3 floats with no offset & stride
+    // glVertexAttribPointer(index, size, dtype, norm, str, ptr)
+
+    // size: int(1-4), the number of components per generic vertex attribute
+    // dtype: type of the attributes: GL_FLOAT, GL_BYTE...;
+    // normalized: whether the value should be normalised, bool;
+    // stride: byte distance/offset between values of consecutive vertices, GLsizei, here 6 since each vertex consists of 6 float value
+    // pointer/offset: offset in bytes of first component of the first attrbiute, the initial value is 0.
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, GLsizei(sizeof(float)*6), (GLvoid*)(0));
+    // activate second attribute on gpu
+    glEnableVertexAttribArray(1);
+    // second attribute is 3 floats with no offset & stride
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, GLsizei(sizeof(float)*6), (GLvoid*)(sizeof(float)*3));
+
+    // store type of primitive to draw
+    star_object.draw_mode = GL_POINTS;
+    // transfer number of indices to model object 
+
+    star_object.num_elements = GLsizei(star_num); 
+
+}
+
+void ApplicationSolar::drawStar() const{
+    // Drawing:
+
+    //bind shader to upload uniforms
+    glUseProgram(m_shaders.at("star").handle);
+    // bind the VAO to draw
+    glBindVertexArray(star_object.vertex_AO);
+
+    // draw bound vertex array using bound shader
+    //Using parameters but NO indices
+    //glDrawArrays(GLenum mode, first, count)
+    //first: statring index in the enabled arryas
+    //count, the number of indices to be rendered
+    glDrawArrays(star_object.draw_mode, 0, star_object.num_elements);
+    
+    // twinkle star effect
+    /*
+    GL_PROGRAM_POINT_SIZE: specify the diameter of rasterized points, the initial value is 1
+    
+    If enalbed and a vertex shader is active, then the derived point size is taken from the shader 
+    builtin gl_PointSize and clamped to the implementation-dependent size rang
+    website: khronos.org/registry/OpenGL-Refpages/gl4/html/glPointSize.xhtml
+
+    glPointSize(GLfloat size):
+    size: the diameter of rasterized points
+    */    
+    glEnable(GL_PROGRAM_POINT_SIZE);
+    // random diameter of points zwischen [2-3]
+    glPointSize( (rand()/(float)(RAND_MAX))*1+2);
+}
+
+void ApplicationSolar::initializeAllOrbits(){
+    for(int i=0; i<orbit_point_num; ++i){
+      GLfloat x = cos(2*M_PI/orbit_point_num*i);
+      GLfloat y = 0; // orbit -> rotata (0,1,0)
+      GLfloat z = sin(2*M_PI/orbit_point_num*i);
+      orbits_container.push_back(x);
+      orbits_container.push_back(y);
+      orbits_container.push_back(z);
+    }
+
+    glGenVertexArrays(1, &orbit_object.vertex_AO);
+    glBindVertexArray(orbit_object.vertex_AO);
+
+    glGenBuffers(1, &orbit_object.vertex_BO);
+    glBindBuffer(GL_ARRAY_BUFFER, orbit_object.vertex_BO);
+    glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(sizeof(float)*orbits_container.size()), orbits_container.data(), GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, GLsizei(sizeof(float)*3), (GLvoid*)(0));
+
+    orbit_object.draw_mode = GL_LINE_LOOP;
+    orbit_object.num_elements = GLsizei(orbit_point_num);
+}
+
+void ApplicationSolar::drawOrbit() const{
+
+  int i=0;
+  for(auto const& p_node: planets_pointers){
+    if( (p_node->getName()!="sun") && (p_node -> getName()!= "moon") ){
+      i=i+1;
+      /*
+      the distance between planet and sun, 18, 16, 14, 12, 10, 8.....
+      the size of planet relative to sun, 0.9, 0.8, 0.7, 0.6.....
+      find the multiple relationship in oder to calculate the radius of the rabit
+      */
+      //cout<<p_node->getSize()<<endl;
+      glm::fmat4 orbit_transform_matrix = glm::fmat4{1.0f};
+      float radius = p_node->getDistanceX() - 2*i*(p_node -> getSize());
+      orbit_transform_matrix = glm::scale(orbit_transform_matrix, glm::fvec3{radius,radius,radius});
+
+      //bind shader to upload uniforms
+      glUseProgram(m_shaders.at("orbit").handle);
+      //give matrices to shaders
+      glUniformMatrix4fv(m_shaders.at("orbit").u_locs.at("OrbitTransformMatrix"),
+                   1, GL_FALSE, glm::value_ptr(orbit_transform_matrix));
+
+      // Drawing:
+      // bind the VAO to draw
+      glBindVertexArray(orbit_object.vertex_AO);
+      glDrawArrays(orbit_object.draw_mode, 0, orbit_object.num_elements);
+    }else if(p_node -> getName()=="moon"){
+      i=i+1;
+      glm::fmat4 orbit_transform_matrix = glm::fmat4{1.0f};
+      float radius=(p_node -> getParent() -> getDistanceX() - p_node-> getDistanceX())+2*i*p_node->getSize();
+      orbit_transform_matrix = glm::scale(p_node -> getParent() -> getLocalTransform(), glm::fvec3{radius,radius,radius});
+
+            //bind shader to upload uniforms
+      glUseProgram(m_shaders.at("orbit").handle);
+      //give matrices to shaders
+      glUniformMatrix4fv(m_shaders.at("orbit").u_locs.at("OrbitTransformMatrix"),
+                   1, GL_FALSE, glm::value_ptr(orbit_transform_matrix));
+      glBindVertexArray(orbit_object.vertex_AO);
+      glDrawArrays(orbit_object.draw_mode, 0, orbit_object.num_elements);
+    }
+
+  }
+
+}
 
 // Assignment 1
 ///////////////////////////// callback functions for window events ////////////

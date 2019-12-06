@@ -21,7 +21,7 @@ struct planet {
   float size;
   float speed;
   float distance;
-  float speed_relative_to_center;
+  float speed_relative_to_center; 
 };
 
 // gpu representation of model
@@ -50,6 +50,11 @@ class ApplicationSolar : public Application {
   */
   vector<shared_ptr<GeometryNode>> initializeAllPlanets() const;
   void drawPlanet() const;
+  void drawStar() const;
+  void drawOrbit() const;
+  void initializeAllStars();
+  void initializeAllOrbits();
+
   glm::fmat4 update_planet_transform(shared_ptr<Node> node) const;
 
   SceneGraph* sceneGraph = SceneGraph::getInstance();
@@ -57,15 +62,15 @@ class ApplicationSolar : public Application {
 
   vector<planet> planets{   // name, parent, depth, size, speed, distance, speed_relative_to_center
     {"sun", "root", "root/sun", 1, 1.0f, 0.0f, 0.0f,  0.0f},
-    {"mercury", "mercury_holder", "root/mercury_holder/mercury", 2, 0.90f, 0.7f, 5.0f, 0.10f},
-    {"venus", "venus_holder", "root/venus_holder/venus", 2, 0.80f, 0.6f, 8.0f, 0.2f  },
-    {"earth","earth_holder", "root/earth_holder/earth", 2, 0.70f, 0.5f, 11.0f, 0.3f},
-    {"moon", "earth", "root/earth_holder/moon_holder/moon", 3, 0.60f, 0.8f, 5.5f, 0.4f },
-    {"mars", "mars_holder", "root/mars_holder/mars",2, 0.5f, 0.65f, 15.0f, 0.5f  },
-    {"jupiter","jupiter_holder", "root/jupiter_holder/jupiter", 2, 0.4f, 0.7f, 14.0f, 0.6f},
-    {"saturn", "saturn_holder","root/saturn_holder/saturn", 2, 0.3f, 0.75f, 17.0f, 0.7f },
-    {"uranus","uranus_holder","root/uranus_holder/uranus",2, 0.2f, 0.8f, 21.0f, 0.8f},
-    {"neptune","neptune_holder","root/neptune_holder/neptune",2, 0.1f, 0.5f, 25.0f, 0.9f}
+    {"mercury", "mercury_holder", "root/mercury_holder/mercury", 2, 0.90f, 0.7f, 18.0f, 0.10f},
+    {"venus", "venus_holder", "root/venus_holder/venus", 2, 0.80f, 0.6f, 16.0f, 0.2f  },
+    {"earth","earth_holder", "root/earth_holder/earth", 2, 0.70f, 0.5f, 14.0f, 0.3f},
+    {"moon", "earth", "root/earth_holder/earth/moon", 3, 0.20f, 0.8f, 13.0f},
+    {"mars", "mars_holder", "root/mars_holder/mars",2, 0.5f, 0.65f, 10.0f, 0.5f},
+    {"jupiter","jupiter_holder", "root/jupiter_holder/jupiter", 2, 0.4f, 0.7f, 8.0f, 0.6f},
+    {"saturn", "saturn_holder","root/saturn_holder/saturn", 2, 0.3f, 0.75f, 6.0f, 0.7f },
+    {"uranus","uranus_holder","root/uranus_holder/uranus",2, 0.2f, 0.8f, 4.0f, 0.8f},
+    {"neptune","neptune_holder","root/neptune_holder/neptune",2, 0.1f, 0.5f, 2.0f, 0.9f}
   };
   vector<shared_ptr<GeometryNode>> planets_pointers;
 
@@ -81,7 +86,13 @@ class ApplicationSolar : public Application {
 
   // cpu representation of model
   model_object planet_object;
-  
+
+  // Assignment 2
+  model_object star_object;
+  model_object orbit_object;
+  vector<GLfloat> stars_container;
+  vector<GLfloat> orbits_container;
+
   // camera transform matrix
   glm::fmat4 m_view_transform;
   // camera projection matrix

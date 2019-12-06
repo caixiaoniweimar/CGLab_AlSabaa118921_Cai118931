@@ -103,6 +103,10 @@ glm::fvec3 Node::getDistance() const{
 	return distance_;
 }
 
+float Node::getDistanceX() const{
+	return distance_.x;
+}
+
 void Node::setDistance(glm::fvec3 const& distance){
 	this -> distance_ = distance;
 }
