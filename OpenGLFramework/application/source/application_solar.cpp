@@ -87,18 +87,25 @@ void ApplicationSolar::initializeShaderPrograms() {
 // load models
 void ApplicationSolar::initializeGeometry() {
   model planet_model = model_loader::obj(m_resource_path + "models/sphere.obj", model::NORMAL);
+  
+  // Initialise Vertex Array Object
 
   // generate vertex array object
   glGenVertexArrays(1, &planet_object.vertex_AO);
   // bind the array for attaching buffers
   glBindVertexArray(planet_object.vertex_AO);
 
+  // Initialise Vertex Buffer Object and load data
+
   // generate generic buffer
   glGenBuffers(1, &planet_object.vertex_BO);
   // bind this as an vertex array buffer containing all attributes
   glBindBuffer(GL_ARRAY_BUFFER, planet_object.vertex_BO);
   // configure currently bound array buffer
+  // creates and initializes a buffer object's data store: size, data, usage
   glBufferData(GL_ARRAY_BUFFER, sizeof(float) * planet_model.data.size(), planet_model.data.data(), GL_STATIC_DRAW);
+
+  // Specify(activate, connect and set format) the Attributes
 
   // activate first attribute on gpu
   glEnableVertexAttribArray(0);
@@ -109,7 +116,9 @@ void ApplicationSolar::initializeGeometry() {
   // second attribute is 3 floats with no offset & stride
   glVertexAttribPointer(1, model::NORMAL.components, model::NORMAL.type, GL_FALSE, planet_model.vertex_bytes, planet_model.offsets[model::NORMAL]);
 
-   // generate generic buffer
+  // Define Vertex Indices(optional)
+
+  // generate generic buffer
   glGenBuffers(1, &planet_object.element_BO);
   // bind this as an vertex array buffer containing all attributes
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, planet_object.element_BO);
@@ -147,10 +156,13 @@ void ApplicationSolar::drawPlanet() const{
     glUniformMatrix4fv(m_shaders.at("planet").u_locs.at("NormalMatrix"),
                  1, GL_FALSE, glm::value_ptr(normal_matrix));
 
+    // Drawing:
+
     // bind the VAO to draw
     glBindVertexArray(planet_object.vertex_AO);
 
     // draw bound vertex array using bound shader
+    // Using indices and parameters
     glDrawElements(planet_object.draw_mode, planet_object.num_elements, model::INDEX.type, NULL);
 
   }

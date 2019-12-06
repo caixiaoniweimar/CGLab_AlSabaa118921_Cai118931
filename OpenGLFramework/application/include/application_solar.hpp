@@ -12,13 +12,6 @@
 #include <vector>
 using namespace std;
 
-/*
-planet{
-  holdernode: 
-  geometrynode:
-}
-*/
-
 // implement planet struct which holds values for the needed properties
 struct planet {
   string name;
