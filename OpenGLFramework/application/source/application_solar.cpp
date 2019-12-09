@@ -345,7 +345,7 @@ void ApplicationSolar::initializeAllStars(){
     float position_low=-100.0;
     float position_up = 100.0;
 
-    float color_low = 0.8;
+    float color_low = 0.5;
     float color_up = 1.0;
 
     //generate position x,y,z between [50,100] 
