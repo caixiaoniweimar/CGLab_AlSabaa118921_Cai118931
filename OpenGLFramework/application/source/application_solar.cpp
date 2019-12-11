@@ -345,7 +345,7 @@ void ApplicationSolar::initializeAllStars(){
     float position_low=-100.0;
     float position_up = 100.0;
 
-    float color_low = 0.5;
+    float color_low = 0.8;
     float color_up = 1.0;
 
     //generate position x,y,z between [50,100] 
@@ -476,7 +476,7 @@ void ApplicationSolar::drawOrbit() const{
       the size of planet relative to sun, 0.9, 0.8, 0.7, 0.6.....
       find the multiple relationship in oder to calculate the radius of the rabit
       */
-      //cout<<p_node->getSize()<<endl;
+  
       glm::fmat4 orbit_transform_matrix = glm::fmat4{1.0f};
       float radius = p_node->getDistanceX() - 2*i*(p_node -> getSize());
       orbit_transform_matrix = glm::scale(orbit_transform_matrix, glm::fvec3{radius,radius,radius});
