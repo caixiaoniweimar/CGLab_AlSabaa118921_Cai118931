@@ -61,7 +61,7 @@ void ApplicationSolar::render() const{
 
   //Assignment 1
   drawPlanet();
-  //sceneGraph->printGraph();
+  sceneGraph->printGraph();
 
   //Assignment 2
   drawStar();
@@ -107,7 +107,6 @@ void ApplicationSolar::uploadProjection() {
 }
 
 void ApplicationSolar::switchAppearance(){
-  cout<<ifCelShading<<endl;
   glUseProgram(m_shaders.at("planet").handle);
   glUniform1f(m_shaders.at("planet").u_locs.at("ifCelShading"), ifCelShading);
 }
