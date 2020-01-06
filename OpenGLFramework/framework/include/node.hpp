@@ -18,6 +18,7 @@ public:
 	Node(shared_ptr<Node> const& parent, string const& name, string const& path, int const& depth, 
 		   float const& size, float const& speed, float const& distance);
 	Node(shared_ptr<Node> const& parent, string const& name, string const& path, float const& speed);
+	Node(shared_ptr<Node> const& parent, string const& name, string const& path);
 
 	shared_ptr<Node> getParent() const;
 	void setParent(shared_ptr<Node> const& parent);
@@ -48,6 +49,7 @@ public:
  	Node removeChildren(string const& name);
 
  	virtual ostream& print(ostream& os) const;
+ 	ostream& printPlanet(ostream& os) const;
 
 private:
 	shared_ptr<Node> parent_;

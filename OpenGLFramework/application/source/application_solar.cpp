@@ -16,19 +16,25 @@ using namespace gl;
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtc/type_ptr.hpp>
-
-#include <iostream>
+#include <memory>
+#include <glm/glm.hpp>
 
 const int star_num = 5000;
 const int orbit_point_num = 360000;
+// Assignment 3:
+// Later every planet can have their own parameter Ka;
+const glm::vec3 ambient = glm::vec3{0.2, 0.2, 0.2};
+const float Ka = 1.0f; // how much of ambient light is reflected by the object, 0~1
+const float Kd = 1.0f;
+const float Ks = 0.7f;
+const float shininess = 24;
 
 ApplicationSolar::ApplicationSolar(std::string const& resource_path)
  :Application{resource_path}
  ,planet_object{}
  ,star_object{}
  ,m_view_transform{glm::translate(glm::fmat4{}, glm::fvec3{0.0f, 0.0f, 4.0f})}
- ,m_view_projection{utils::calculate_projection_matrix(initial_aspect_ratio)}
-{
+ ,m_view_projection{utils::calculate_projection_matrix(initial_aspect_ratio)}{
   initializeGeometry();
   initializeShaderPrograms();
   //Assignment 1
@@ -55,7 +61,7 @@ void ApplicationSolar::render() const{
 
   //Assignment 1
   drawPlanet();
-  sceneGraph->printGraph();
+  //sceneGraph->printGraph();
 
   //Assignment 2
   drawStar();
@@ -100,25 +106,43 @@ void ApplicationSolar::uploadProjection() {
                      1, GL_FALSE, glm::value_ptr(m_view_projection));
 }
 
+void ApplicationSolar::switchAppearance(){
+  cout<<ifCelShading<<endl;
+  glUseProgram(m_shaders.at("planet").handle);
+  glUniform1f(m_shaders.at("planet").u_locs.at("ifCelShading"), ifCelShading);
+}
+
 // update uniform locations
 void ApplicationSolar::uploadUniforms() { 
   // bind shader to which to upload unforms
   // upload uniform values to new locations
   uploadView();
   uploadProjection();
+  switchAppearance();
 }
 
 ///////////////////////////// intialisation functions /////////////////////////
 // load shader sources
+
+//Assignment 3: use own planet.vert, planet.frag
 void ApplicationSolar::initializeShaderPrograms() {
   // store shader program objects in container
-  m_shaders.emplace("planet", shader_program{{{GL_VERTEX_SHADER,m_resource_path + "shaders/simple.vert"},
-                                           {GL_FRAGMENT_SHADER, m_resource_path + "shaders/simple.frag"}}});
+  m_shaders.emplace("planet", shader_program{{{GL_VERTEX_SHADER,m_resource_path + "shaders/planet.vert"},
+                                           {GL_FRAGMENT_SHADER, m_resource_path + "shaders/planet.frag"}}});
   // request uniform locations for shader program
   m_shaders.at("planet").u_locs["NormalMatrix"] = -1;
   m_shaders.at("planet").u_locs["ModelMatrix"] = -1;
   m_shaders.at("planet").u_locs["ViewMatrix"] = -1;
   m_shaders.at("planet").u_locs["ProjectionMatrix"] = -1;
+
+  m_shaders.at("planet").u_locs["PlanetColor"] = -1;
+  m_shaders.at("planet").u_locs["Ambient"] = -1;
+  m_shaders.at("planet").u_locs["Ka"] = -1;
+  m_shaders.at("planet").u_locs["Kd"] = -1;
+  m_shaders.at("planet").u_locs["Ks"] = -1;
+  m_shaders.at("planet").u_locs["Shininess"] = -1;
+  m_shaders.at("planet").u_locs["LightColor"] = -1;
+  m_shaders.at("planet").u_locs["ifCelShading"] = false;
 
   // Assignment 2
   // use predefined vertex shader and fragment shader
@@ -210,6 +234,19 @@ void ApplicationSolar::drawPlanet() const{
     glUniformMatrix4fv(m_shaders.at("planet").u_locs.at("NormalMatrix"),
                  1, GL_FALSE, glm::value_ptr(normal_matrix));
 
+    //Assignment3
+    //give planetColor to vertex shaders
+    //glUniform3f(GLint location, GLfloatv0, v1, v2)
+    glUniform3f(m_shaders.at("planet").u_locs.at("PlanetColor"), (p_node -> getColor()).x, (p_node -> getColor()).y, (p_node -> getColor()).z);
+    glUniform3f(m_shaders.at("planet").u_locs.at("Ambient"), ambient.x, ambient.y, ambient.z);
+    glUniform1f(m_shaders.at("planet").u_locs.at("Ka"), Ka);
+    glUniform1f(m_shaders.at("planet").u_locs.at("Kd"), Kd);
+    glUniform1f(m_shaders.at("planet").u_locs.at("Ks"), Ks);
+    glUniform1f(m_shaders.at("planet").u_locs.at("Shininess"), shininess);
+
+    glUniform3f(m_shaders.at("planet").u_locs.at("LightColor"), p_point_light->cal_lightColor().x, p_point_light->cal_lightColor().y, p_point_light->cal_lightColor().z);
+
+
     // Drawing:
 
     // bind the VAO to draw
@@ -237,13 +274,18 @@ return vector<shared_ptr<GeometryNode>>
 */
 vector<shared_ptr<GeometryNode>> ApplicationSolar::initializeAllPlanets() const{
    vector<shared_ptr<GeometryNode>> geometry_nodes;
+
     for(int i=0; i<planets.size(); i++){
       planet planet = planets[i];
-      if(planet.parent == "root"){
+      if(planet.parent == "point_light"){
 
-        GeometryNode sun{scene_root, planet.name, planet.path, planet.depth, planet.size, planet.speed, planet.distance};
+        //parent,name,path......
+        GeometryNode sun{p_point_light, planet.name, planet.path, planet.depth, planet.size, planet.speed, planet.distance, planet.color};
         auto const p_sun = make_shared<GeometryNode>(sun);
-        scene_root -> addChildren(p_sun);
+
+        scene_root -> addChildren(p_point_light);
+        p_point_light -> addChildren(p_sun);
+
         geometry_nodes.push_back(p_sun);
   
       }else if(planet.parent =="earth"){ // add moon
@@ -257,7 +299,7 @@ vector<shared_ptr<GeometryNode>> ApplicationSolar::initializeAllPlanets() const{
         //holder_node.setLocalTransform( glm::rotate(holder_node.getLocalTransform(), float(glfwGetTime())*holder_node.getSpeed(), glm::fvec3{0.0f, 1.0f, 0.0f}) );
         //holder_node.setWorldTransform( (holder_node.getParent()-> getWorldTransform())*holder_node.getLocalTransform() );
 
-        GeometryNode node{p_earth, planet.name, planet.path, planet.depth, planet.size, planet.speed, planet.distance};
+        GeometryNode node{p_earth, planet.name, planet.path, planet.depth, planet.size, planet.speed, planet.distance, planet.color};
         auto const& p_node = make_shared<GeometryNode>(node);
         //p_holder_node -> addChildren(p_node);
         p_earth -> addChildren(p_node);
@@ -272,7 +314,7 @@ vector<shared_ptr<GeometryNode>> ApplicationSolar::initializeAllPlanets() const{
         holder_node.setLocalTransform( glm::rotate(holder_node.getLocalTransform(), float(glfwGetTime())*holder_node.getSpeed(), glm::fvec3{0.0f, 1.0f, 0.0f}) );
         holder_node.setWorldTransform( (scene_root -> getWorldTransform())*holder_node.getLocalTransform() );
 
-        GeometryNode node{p_holder_node, planet.name, planet.path, planet.depth, planet.size, planet.speed, planet.distance};
+        GeometryNode node{p_holder_node, planet.name, planet.path, planet.depth, planet.size, planet.speed, planet.distance, planet.color};
         auto const& p_node = make_shared<GeometryNode>(node);
         p_holder_node -> addChildren(p_node);
         geometry_nodes.push_back(p_node);
@@ -543,6 +585,17 @@ void ApplicationSolar::keyCallback(int key, int action, int mods) {
     else if(key == GLFW_KEY_S && (action == GLFW_PRESS || action == GLFW_REPEAT )){
         m_view_transform = glm::translate(m_view_transform, glm::fvec3{0.0f, 0.2f, 0.0f});
         uploadView();
+    }
+
+    //Assignment 3
+    //default Blinn-Phong local illumination
+    else if(key == GLFW_KEY_1 && (action == GLFW_PRESS || action == GLFW_REPEAT )){
+        ifCelShading = false;
+        switchAppearance();
+    }
+    else if(key == GLFW_KEY_2 && (action == GLFW_PRESS || action == GLFW_REPEAT )){
+        ifCelShading = true;
+        switchAppearance();
     }
 }
 

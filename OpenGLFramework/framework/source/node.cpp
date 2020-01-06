@@ -35,6 +35,18 @@ Node::Node(shared_ptr<Node> const& parent, string const& name, string const& pat
 	distance_{glm::fvec3{0.0f,0.0f,0.0f}},
 	size_{0.0f} {}
 
+//constructor for point_light
+Node::Node(shared_ptr<Node> const& parent, string const& name, string const& path):
+	parent_{parent},
+	children_{},
+	name_{name},
+	path_{path},
+	depth_{1}, 
+	speed_{0.0f},
+	distance_{glm::fvec3{0.0f,0.0f,0.0f}},
+	size_{0.0f}{}
+
+
 shared_ptr<Node> Node::getParent() const{
 	return parent_;
 }
@@ -144,6 +156,10 @@ Node Node::removeChildren(string const& name){
 ostream& Node::print(ostream& os) const{
 	os<< "Name: "<<name_<< " Path: "<<path_<< " Depth: "<<depth_<<" Speed: "<<speed_<< " Size: "<<size_<<endl;
 	return os;
+}
+ostream& Node::printPlanet(ostream& os) const{
+	os<< "Name: "<<name_<< " Path: "<<path_<< " Depth: "<<depth_;//<<" Speed: "<<speed_<< " Size: "<<size_<<endl;
+	return os;	
 }
 
 ostream& operator<<(ostream& os, Node const& node){
