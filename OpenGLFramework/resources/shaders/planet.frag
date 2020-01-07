@@ -32,7 +32,6 @@ void main() {
 		vec3 V = normalize(pass_Eye_Position - pass_Position); // view direction
 
 		vec3 H = normalize(L+V);
-		//vec3 R = normalize( 2*dot(N,L)*N-L );
 
 		//ambient
 		vec3 ambient = Ambient*Ka;
@@ -42,9 +41,8 @@ void main() {
 		vec3 diffuse = Kd*LightColor*diffuseLight;
 
 		//specular
-		float specularLight = pow(max(dot(H,N),0), Shininess);
-		//float specularLight = pow(max(dot(R,V),0), Shininess);                    
-		//if(diffuseLight <= 0) specularLight = 0;
+		float specularLight = pow(max(dot(H,N),0), Shininess);                   
+		if(diffuseLight <= 0) specularLight = 0;
 		vec3 specular = Ks*LightColor*specularLight;
 
 	if(ifCelShading){ //call 2, CelShading
