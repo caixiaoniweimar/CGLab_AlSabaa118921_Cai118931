@@ -66,8 +66,8 @@ class ApplicationSolar : public Application {
   shared_ptr<Node> scene_root = sceneGraph -> getRoot();
 
 //Assignment 3, initialize point light for sun
-  const float lightIntensity = 4.0; //light brightness
-  const glm::vec3 lightColor = glm::vec3{0.2, 0.2, 0.2};      //point_light{parent, name, path,......}
+  const float lightIntensity = 500.0; //light brightness
+  const glm::vec3 lightColor = glm::vec3{1, 1, 1};      //point_light{parent, name, path,......}
   PointLightNode point_light{scene_root, "point_light", "root/point_light", lightIntensity, lightColor};
   shared_ptr<PointLightNode> p_point_light = make_shared<PointLightNode>(point_light);
 

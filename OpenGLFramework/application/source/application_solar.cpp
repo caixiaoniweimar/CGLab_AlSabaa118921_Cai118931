@@ -25,7 +25,7 @@ const int orbit_point_num = 360000;
 // Later every planet can have their own parameter Ka;
 const glm::vec3 ambient = glm::vec3{0.2, 0.2, 0.2};
 const float Ka = 1.0f; // how much of ambient light is reflected by the object, 0~1
-const float Kd = 1.0f;
+const float Kd = 0.5f;
 const float Ks = 0.7f;
 const float shininess = 24;
 

@@ -10,13 +10,15 @@ uniform vec3 PlanetColor;
 uniform vec3 Ambient; // only a color, usually really dark
 uniform vec3 LightColor;  // cal_lightColor() method already intensity*light_color
 
-//Point light sources, put it at infinity one can simulate solar light
+//Point light sources, put it at sun's position 
 vec3 lightPosition=vec3(0, 0, 0);
 uniform float Ka;
 uniform float Kd;
 uniform float Ks;
 
 uniform float Shininess;
+
+float reflectivity=5.0;
 
 //CelShading: https://en.wikibooks.org/wiki/GLSL_Programming/Unity/Toon_Shading
 uniform bool ifCelShading;
@@ -28,32 +30,40 @@ float LitOutlineThickness = 0.1;
 void main() {
 
 		vec3 N = normalize(pass_Normal); //normal
-		vec3 L = normalize(lightPosition - pass_Position);  //lightsource direction
-		vec3 V = normalize(pass_Eye_Position - pass_Position); // view direction
+		vec3 L = lightPosition - pass_Position;
+		vec3 V = pass_Eye_Position - pass_Position;
 
 		vec3 H = normalize(L+V);
 
+		L = normalize(L);  //lightsource direction
+		V = normalize(V); // view direction
+
 		//ambient
 		vec3 ambient = Ambient*Ka;
+        
+        //diffuse reflection:
+		float distance = length(lightPosition - pass_Position);
 
-		//diffuse reflection: Lambert Law, Lecture 3-Local Illumination models,page8
+		vec3 light = LightColor/( (4*3.14159265359)* pow(distance,2) ); //intensity of the light that reaches the processed fragment
+
 		float diffuseLight = max(dot(N,L), 0);
-		vec3 diffuse = Kd*LightColor*diffuseLight;
+		vec3 diffuse = Kd*light*diffuseLight*(reflectivity/3.14159265359); //03-Shaders slide 8
 
 		//specular
 		float specularLight = pow(max(dot(H,N),0), Shininess);                   
 		if(diffuseLight <= 0) specularLight = 0;
-		vec3 specular = Ks*LightColor*specularLight;
+
+		vec3 specular = Ks*light*specularLight;
 
 	if(ifCelShading){ //call 2, CelShading
 
 		const int levels =3;
 		const float weights = 1.0/levels;
-		vec3 diffuseColor = Kd*LightColor*floor(diffuseLight*levels)*weights; // floor :round down
+		vec3 diffuseColor = Kd*light*floor(diffuseLight*levels)*weights*(reflectivity/3.14159265359); // floor :round down
 
 		vec3 specularColor;
 		if( dot(L,N)>0.0 ){ // light source on the right side
-			specularColor = Ks*LightColor*pow(max(0, dot(H,N)), Shininess);
+			specularColor = Ks*light*pow(max(0, dot(H,N)), 4*Shininess);
 		}
 		
 		float specLevel= 0; //limit the spec
