@@ -16,7 +16,7 @@ public:
 	GeometryNode();
 	~GeometryNode();
 	GeometryNode(shared_ptr<Node> const& parent, string const& name, string const& path, int const& depth, 
-		   float const& size, float const& speed, float const& distance, glm::fvec3 const& color, string const& textureFilePath);
+		   float const& size, float const& speed, float const& distance, glm::fvec3 const& color, string const& textureFilePath, bool const& ifNormalMapping);
 	model getGeometry() const;
 	void setGeometry(model const& model);
 
@@ -35,6 +35,9 @@ public:
 
 	pixel_data getPixelData() const;
 	void setPixelData(string const& textureFilePath);
+
+	bool getIfNormalMapping() const;
+	void setIfNormalMapping(bool const& ifNormalMapping);
 private:
 	model model_;
 	glm::fvec3 color_;
@@ -44,6 +47,7 @@ private:
 // create a texture object from the pixel_data struct for each planet
 	texture_object textureObject_;
 	pixel_data pixelData_;
+	bool ifNormalMapping_=false;
 
 };
 #endif

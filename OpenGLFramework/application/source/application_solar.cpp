@@ -36,17 +36,18 @@ ApplicationSolar::ApplicationSolar(std::string const& resource_path)
   initializeGeometry();
   initializeShaderPrograms();
   //Assignment 1
-  //planets_pointers=initializeAllPlanets();
   initializeAllPlanets();
   //Assignment 4
-  initializeTextures(planets_pointers);
+  initializeTextures();
+  initializeSkybox();
   //Assignment 2
   initializeAllStars();
   initializeAllOrbits();
-  for(auto const& p_holder: holder_nodes_pointers){
+
+  /*for(auto const& p_holder: holder_nodes_pointers){
     p_holder -> setLocalTransform( glm::rotate(p_holder->getLocalTransform(), float(glfwGetTime())*p_holder->getSpeed(), glm::fvec3{0.0f, 1.0f, 0.0f}) );
     p_holder -> setWorldTransform( (scene_root -> getWorldTransform())*p_holder->getLocalTransform() );
-  }
+  }*/
 }
 
 ApplicationSolar::~ApplicationSolar() {
@@ -72,6 +73,9 @@ void ApplicationSolar::render() const{
   drawStar();
   drawOrbit();
 
+  //Assignment 4
+  drawSkyBox();
+
   //test methods, both work
   //auto neptune = (scene_root->getChildren("neptune_holder")).getChildren("neptune");
 }
@@ -92,6 +96,9 @@ void ApplicationSolar::uploadView() {
   glUniformMatrix4fv(m_shaders.at("orbit").u_locs.at("ViewMatrix"),
                      1, GL_FALSE, glm::value_ptr(view_matrix));
 
+  glUseProgram(m_shaders.at("skybox").handle);
+  glUniformMatrix4fv(m_shaders.at("skybox").u_locs.at("ViewMatrix"),
+                     1, GL_FALSE, glm::value_ptr(view_matrix));  
 }
 
 void ApplicationSolar::uploadProjection() {
@@ -108,11 +115,15 @@ void ApplicationSolar::uploadProjection() {
   glUseProgram(m_shaders.at("orbit").handle);
   glUniformMatrix4fv(m_shaders.at("orbit").u_locs.at("ProjectionMatrix"),
                      1, GL_FALSE, glm::value_ptr(m_view_projection));
+
+  glUseProgram(m_shaders.at("skybox").handle);
+  glUniformMatrix4fv(m_shaders.at("skybox").u_locs.at("ProjectionMatrix"),
+                     1, GL_FALSE, glm::value_ptr(m_view_projection));
 }
 
 void ApplicationSolar::switchAppearance(){
   glUseProgram(m_shaders.at("planet").handle);
-  glUniform1f(m_shaders.at("planet").u_locs.at("ifCelShading"), ifCelShading);
+  glUniform1i(m_shaders.at("planet").u_locs.at("modelType"), modelType);
 }
 
 // update uniform locations
@@ -142,10 +153,11 @@ void ApplicationSolar::initializeShaderPrograms() {
   m_shaders.at("planet").u_locs["Ks"] = -1;
   m_shaders.at("planet").u_locs["Shininess"] = -1;
   m_shaders.at("planet").u_locs["LightColor"] = -1;
-  m_shaders.at("planet").u_locs["ifCelShading"] = false;
+  m_shaders.at("planet").u_locs["modelType"] = 1;
 
-  //Aufgabe4
+  //Assignment 4
   m_shaders.at("planet").u_locs["colorTexture1"]=-1;
+  m_shaders.at("planet").u_locs["ifNormalMapping"] = -1;
 
   // Assignment 2
   // use predefined vertex shader and fragment shader
@@ -161,6 +173,13 @@ void ApplicationSolar::initializeShaderPrograms() {
   m_shaders.at("orbit").u_locs["ViewMatrix"] = -1;
   m_shaders.at("orbit").u_locs["ProjectionMatrix"] = -1;
 
+  // Assignment 4 SkyBox
+  m_shaders.emplace("skybox", shader_program{{{ {GL_VERTEX_SHADER,m_resource_path + "shaders/skybox.vert"},
+                                              {GL_FRAGMENT_SHADER, m_resource_path + "shaders/skybox.frag"}}}});
+  m_shaders.at("skybox").u_locs["ViewMatrix"] = -1;
+  m_shaders.at("skybox").u_locs["ProjectionMatrix"] = -1;
+  m_shaders.at("skybox").u_locs["ModelMatrix"] = -1;
+  m_shaders.at("skybox").u_locs["skybox"] = -1;
 }
 
 // load models
@@ -226,14 +245,13 @@ only moon's parent is earth, add moon as child of earth, the depth of moon is 3.
 return vector<shared_ptr<GeometryNode>>
 */
 void ApplicationSolar::initializeAllPlanets(){
-    //vector<shared_ptr<GeometryNode>> geometry_nodes;
 
     for(int i=0; i<planets.size(); i++){
       planet planet = planets[i];
       if(planet.parent == "point_light"){
 
         //parent,name,path......
-        GeometryNode sun{p_point_light, planet.name, planet.path, planet.depth, planet.size, planet.speed, planet.distance, planet.color, planet.texture_file_path};
+        GeometryNode sun{p_point_light, planet.name, planet.path, planet.depth, planet.size, planet.speed, planet.distance, planet.color, planet.texture_file_path, planet.ifNormalMapping};
         auto const p_sun = make_shared<GeometryNode>(sun);
         //Assignment 4
         p_sun -> setPixelData(planet.texture_file_path);
@@ -254,7 +272,7 @@ void ApplicationSolar::initializeAllPlanets(){
         //holder_node.setLocalTransform( glm::rotate(holder_node.getLocalTransform(), float(glfwGetTime())*holder_node.getSpeed(), glm::fvec3{0.0f, 1.0f, 0.0f}) );
         //holder_node.setWorldTransform( (holder_node.getParent()-> getWorldTransform())*holder_node.getLocalTransform() );
 
-        GeometryNode node{p_earth, planet.name, planet.path, planet.depth, planet.size, planet.speed, planet.distance, planet.color, planet.texture_file_path};
+        GeometryNode node{p_earth, planet.name, planet.path, planet.depth, planet.size, planet.speed, planet.distance, planet.color, planet.texture_file_path, planet.ifNormalMapping};
         auto const& p_node = make_shared<GeometryNode>(node);
         //Assignment 4
         p_node -> setPixelData(planet.texture_file_path);
@@ -271,12 +289,9 @@ void ApplicationSolar::initializeAllPlanets(){
         //holder_node.setLocalTransform( glm::rotate(holder_node.getLocalTransform(), float(glfwGetTime())*holder_node.getSpeed(), glm::fvec3{0.0f, 1.0f, 0.0f}) );
         //holder_node.setWorldTransform( (scene_root -> getWorldTransform())*holder_node.getLocalTransform() );
         scene_root -> addChildren(p_holder_node);
-        //cout<<holder_node.getSpeed()<<endl;
-        //cout<<glm::to_string(holder_node.getLocalTransform())<<endl;
-        //cout<<"3 "<<glm::to_string(holder_node.getWorldTransform())<<endl;
         holder_nodes_pointers.push_back(p_holder_node);
 
-        GeometryNode node{p_holder_node, planet.name, planet.path, planet.depth, planet.size, planet.speed, planet.distance, planet.color, planet.texture_file_path};
+        GeometryNode node{p_holder_node, planet.name, planet.path, planet.depth, planet.size, planet.speed, planet.distance, planet.color, planet.texture_file_path,planet.ifNormalMapping};
         auto const& p_node = make_shared<GeometryNode>(node);
         //Assignment 4
         p_node -> setPixelData(planet.texture_file_path);
@@ -289,7 +304,7 @@ void ApplicationSolar::initializeAllPlanets(){
 }
 
 // Assignment 4
-void ApplicationSolar::initializeTextures(vector<shared_ptr<GeometryNode>> planets_pointers) const{
+void ApplicationSolar::initializeTextures(){
   for(auto const& planet : planets_pointers){
       auto pixel_data = planet -> getPixelData();
       auto texture_object = planet -> getTextureObject();
@@ -351,7 +366,116 @@ void ApplicationSolar::initializeTextures(vector<shared_ptr<GeometryNode>> plane
       //Pixel Transfer opration
       glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, pixel_data.width, pixel_data.height, 0, pixel_data.channels, pixel_data.channel_type ,pixel_data.ptr());
       planet -> setTextureObject(texture_object);
+      //cout<<planet -> getIfNormalMapping()<<endl;
+    //For NormalMapping
+      if(planet -> getIfNormalMapping()){
+
+          planet -> setPixelData(m_resource_path+"textures/mars_1k_normal.png");
+          auto pixel_data2 = planet -> getPixelData();
+          glActiveTexture(GL_TEXTURE3);
+          glGenTextures(1, &mars_normal_mapping.handle);
+          glBindTexture(GL_TEXTURE_2D, mars_normal_mapping.handle);
+
+          glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+          glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+          glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, pixel_data2.width, pixel_data2.height, 0, pixel_data2.channels, pixel_data2.channel_type ,pixel_data2.ptr());
+      }
+
   }
+    //For SkyBox1
+    glActiveTexture(GL_TEXTURE1);
+    texture_object textureObject1 = skybox1.textureObject;
+    glGenTextures(1, &textureObject1.handle);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, textureObject1.handle);
+
+    //specify its wrapping and filtering methods
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    //GL_TEXTURE_WRAP_R, sets the wrapping method for the texture's R coordinate which corresponds to texture's 3rd dimension(z).
+    //GL_CLAMP_TO_EDGE: always return their edge values whenever we sample between faces, since texture coordinates that are exactly between two faces might not hit an exact face
+
+    pixel_data pixel_data_bk = texture_loader::file(skybox1.filePath_bk);
+    pixel_data pixel_data_dn = texture_loader::file(skybox1.filePath_dn);
+    pixel_data pixel_data_ft = texture_loader::file(skybox1.filePath_ft);
+    pixel_data pixel_data_lf = texture_loader::file(skybox1.filePath_lf);
+    pixel_data pixel_data_rt = texture_loader::file(skybox1.filePath_rt);
+    pixel_data pixel_data_up = texture_loader::file(skybox1.filePath_up);
+
+    //a cubemap consists of 6 textures, one for each face, have to call glTexImage2D 6 times with their parameters set to values
+    //set the texture target paramenter to a specific face of the cubemap
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGBA, pixel_data_bk.width, pixel_data_bk.height, 0, pixel_data_bk.channels, pixel_data_bk.channel_type, pixel_data_bk.ptr()); // Back, bk
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGBA, pixel_data_dn.width, pixel_data_dn.height, 0, pixel_data_dn.channels, pixel_data_dn.channel_type, pixel_data_dn.ptr()); // Bottom, dn
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGBA, pixel_data_ft.width, pixel_data_ft.height, 0, pixel_data_ft.channels, pixel_data_ft.channel_type, pixel_data_ft.ptr()); // Front, ft 
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGBA, pixel_data_lf.width, pixel_data_lf.height, 0, pixel_data_lf.channels, pixel_data_lf.channel_type, pixel_data_lf.ptr()); // Left, lf
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGBA, pixel_data_rt.width, pixel_data_rt.height, 0, pixel_data_rt.channels, pixel_data_rt.channel_type, pixel_data_rt.ptr()); // Right, rt
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGBA, pixel_data_up.width, pixel_data_up.height, 0, pixel_data_up.channels, pixel_data_up.channel_type, pixel_data_up.ptr()); // Top, up
+    skybox1.textureObject = textureObject1;
+
+    //For SkyBox2
+    glActiveTexture(GL_TEXTURE2);
+    texture_object textureObject2 = skybox2.textureObject;
+    glGenTextures(1, &textureObject2.handle);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, textureObject2.handle);
+
+    //specify its wrapping and filtering methods
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    //GL_TEXTURE_WRAP_R, sets the wrapping method for the texture's R coordinate which corresponds to texture's 3rd dimension(z).
+    //GL_CLAMP_TO_EDGE: always return their edge values whenever we sample between faces, since texture coordinates that are exactly between two faces might not hit an exact face
+
+    pixel_data pixel_data_bk2 = texture_loader::file(skybox2.filePath_bk);
+    pixel_data pixel_data_dn2 = texture_loader::file(skybox2.filePath_dn);
+    pixel_data pixel_data_ft2 = texture_loader::file(skybox2.filePath_ft);
+    pixel_data pixel_data_lf2 = texture_loader::file(skybox2.filePath_lf);
+    pixel_data pixel_data_rt2 = texture_loader::file(skybox2.filePath_rt);
+    pixel_data pixel_data_up2 = texture_loader::file(skybox2.filePath_up);
+
+    //a cubemap consists of 6 textures, one for each face, have to call glTexImage2D 6 times with their parameters set to values
+    //set the texture target paramenter to a specific face of the cubemap
+    //cout<<"1 "<<pixel_data_up.channels<<endl;
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGBA, pixel_data_bk2.width, pixel_data_bk2.height, 0, pixel_data_bk2.channels, pixel_data_bk2.channel_type, pixel_data_bk2.ptr()); // Back, bk
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGBA, pixel_data_dn2.width, pixel_data_dn2.height, 0, pixel_data_dn2.channels, pixel_data_dn2.channel_type, pixel_data_dn2.ptr()); // Bottom, dn
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGBA, pixel_data_ft2.width, pixel_data_ft2.height, 0, pixel_data_ft2.channels, pixel_data_ft2.channel_type, pixel_data_ft2.ptr()); // Front, ft 
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGBA, pixel_data_lf2.width, pixel_data_lf2.height, 0, pixel_data_lf2.channels, pixel_data_lf2.channel_type, pixel_data_lf2.ptr()); // Left, lf
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGBA, pixel_data_rt2.width, pixel_data_rt2.height, 0, pixel_data_rt2.channels, pixel_data_rt2.channel_type, pixel_data_rt2.ptr()); // Right, rt
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGBA, pixel_data_up2.width, pixel_data_up2.height, 0, pixel_data_up2.channels, pixel_data_up2.channel_type, pixel_data_up2.ptr()); // Top, up
+    skybox2.textureObject = textureObject2;
+}
+
+void ApplicationSolar::initializeSkybox(){
+    model skybox_model = model_loader::obj(m_resource_path + "models/skybox.obj", model::NORMAL);
+
+    glGenVertexArrays(1, &skybox_object.vertex_AO);
+    glBindVertexArray(skybox_object.vertex_AO);
+
+    glGenBuffers(1, &skybox_object.vertex_BO);
+    glBindBuffer(GL_ARRAY_BUFFER, skybox_object.vertex_BO);
+    //glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(sizeof(float) * 36), stars_container.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * skybox_model.data.size(), skybox_model.data.data(), GL_STATIC_DRAW);
+
+    // activate first attribute on gpu
+    glEnableVertexAttribArray(0);
+    // first attribute is 3 floats with no offset & stride
+    glVertexAttribPointer(0, model::POSITION.components, model::POSITION.type, GL_FALSE, skybox_model.vertex_bytes, skybox_model.offsets[model::POSITION]);
+
+    glGenBuffers(1, &skybox_object.element_BO);
+    // bind this as an vertex array buffer containing all attributes
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, skybox_object.element_BO);
+    // configure currently bound array buffer
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, model::INDEX.size * skybox_model.indices.size(), skybox_model.indices.data(), GL_STATIC_DRAW);
+
+
+    // store type of primitive to draw
+    skybox_object.draw_mode = GL_TRIANGLES;
+    // transfer number of indices to model object 
+    skybox_object.num_elements = GLsizei(skybox_model.indices.size());
 }
 
 // Assignment 2
@@ -431,6 +555,30 @@ void ApplicationSolar::initializeAllStars(){
 
 }
 
+void ApplicationSolar::initializeAllOrbits(){
+    for(int i=0; i<orbit_point_num; ++i){
+      GLfloat x = cos(2*M_PI/orbit_point_num*i);
+      GLfloat y = 0; // orbit -> rotata (0,1,0)
+      GLfloat z = sin(2*M_PI/orbit_point_num*i);
+      orbits_container.push_back(x);
+      orbits_container.push_back(y);
+      orbits_container.push_back(z);
+    }
+
+    glGenVertexArrays(1, &orbit_object.vertex_AO);
+    glBindVertexArray(orbit_object.vertex_AO);
+
+    glGenBuffers(1, &orbit_object.vertex_BO);
+    glBindBuffer(GL_ARRAY_BUFFER, orbit_object.vertex_BO);
+    glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(sizeof(float)*orbits_container.size()), orbits_container.data(), GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, GLsizei(sizeof(float)*3), (GLvoid*)(0));
+
+    orbit_object.draw_mode = GL_LINE_LOOP;
+    orbit_object.num_elements = GLsizei(orbit_point_num);
+}
+
 // Assignment 1
 /*
 draw all Planets
@@ -474,13 +622,27 @@ void ApplicationSolar::drawPlanet() const{
     3. the samplers holds an interger with the index of the Texture Unit that is should access as value
     4. the index must be uploaded to the sampler value with glUniform1i
     */
-    //Bind for Accessing
-    glActiveTexture(GL_TEXTURE0); //active Texture Unit to which to bind texture
     auto texture_object = p_node -> getTextureObject();
-    glBindTexture(GL_TEXTURE_2D, texture_object.handle); //bind Texture OBject to 2D texture binding point of unit
+    if(modelType==4){  // if call NormalMapping
+      if(p_node -> getIfNormalMapping()){
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, mars_normal_mapping.handle);
+      }else{
+        glActiveTexture(GL_TEXTURE0); //active Texture Unit to which to bind texture
+        glBindTexture(GL_TEXTURE_2D, texture_object.handle); //bind Texture OBject to 2D texture binding point of unit
+      }
+    }else{
+      //Bind for Accessing
+      glActiveTexture(GL_TEXTURE0); //active Texture Unit to which to bind texture
+      glBindTexture(GL_TEXTURE_2D, texture_object.handle); //bind Texture OBject to 2D texture binding point of unit
+    }
 
     //Upload Texture
     glUniform1i(m_shaders.at("planet").u_locs.at("colorTexture1"), 0); // 0-> the index of Texture Unit
+
+    //NormalMapping
+    bool ifNormalMapping = p_node -> getIfNormalMapping();
+    glUniform1i(m_shaders.at("planet").u_locs.at("ifNormalMapping"), ifNormalMapping);
 
     // Drawing:
 
@@ -521,8 +683,6 @@ so that we don't need to go through the tree every time. -> avoid a lot of unnec
 glm::fmat4 ApplicationSolar::update_planet_transform(shared_ptr<Node> node) const{
   
   glm::fmat4 model_matrix = glm::fmat4{1.0f};
-
-  //if(node->getParent() != nullptr){  // if node is not root; if root, use default local_transform and world_transform
     
     glm::fmat4 local_transform = glm::fmat4{1.0f};
     float size = node->getSize();
@@ -534,6 +694,12 @@ glm::fmat4 ApplicationSolar::update_planet_transform(shared_ptr<Node> node) cons
 
     local_transform = glm::scale(local_transform, glm::fvec3{size,size,size});
 
+    if(node -> getParent() -> getName()=="point_light"){
+      local_transform = glm::rotate(local_transform,float(glfwGetTime())* 0.8f, glm::fvec3{0.0f, 1.0f, 0.0f});  
+    }else{
+      local_transform = glm::rotate(local_transform,float(glfwGetTime())* node -> getParent() -> getSpeed(), glm::fvec3{0.0f, 1.0f, 0.0f});  
+    }
+    
     node -> setLocalTransform(local_transform);
     
 /*
@@ -546,8 +712,36 @@ transformation of its parent.
 
     node -> setWorldTransform(model_matrix);
 
-  //}
   return model_matrix;
+}
+//Assignment 4
+void ApplicationSolar::drawSkyBox() const{
+
+    glDepthMask(GL_FALSE);
+    glUseProgram(m_shaders.at("skybox").handle);
+
+    if(modelType==3){
+      glActiveTexture(GL_TEXTURE2);
+      glBindTexture(GL_TEXTURE_CUBE_MAP, skybox2.textureObject.handle);
+    }else{
+      glActiveTexture(GL_TEXTURE1);
+      glBindTexture(GL_TEXTURE_CUBE_MAP, skybox1.textureObject.handle);
+    }
+
+    glm::fmat4 model_matrix = glm::fmat4{1.0};
+    model_matrix = glm::scale(model_matrix, glm::fvec3{60, 60, 60});
+    glUniformMatrix4fv(m_shaders.at("skybox").u_locs.at("ModelMatrix"),1, GL_FALSE, glm::value_ptr(model_matrix));
+
+    if(modelType==3)
+      glUniform1i(m_shaders.at("skybox").u_locs.at("skybox"), 2);
+    else
+      glUniform1i(m_shaders.at("skybox").u_locs.at("skybox"), 1);
+
+    glBindVertexArray(skybox_object.vertex_AO);
+    glDrawElements(skybox_object.draw_mode, skybox_object.num_elements, model::INDEX.type, NULL);
+
+    glDepthMask(GL_TRUE);
+
 }
 
 
@@ -580,30 +774,6 @@ void ApplicationSolar::drawStar() const{
     glEnable(GL_PROGRAM_POINT_SIZE);
     // random diameter of points zwischen [2-3]
     glPointSize( (rand()/(float)(RAND_MAX))*1+2);
-}
-
-void ApplicationSolar::initializeAllOrbits(){
-    for(int i=0; i<orbit_point_num; ++i){
-      GLfloat x = cos(2*M_PI/orbit_point_num*i);
-      GLfloat y = 0; // orbit -> rotata (0,1,0)
-      GLfloat z = sin(2*M_PI/orbit_point_num*i);
-      orbits_container.push_back(x);
-      orbits_container.push_back(y);
-      orbits_container.push_back(z);
-    }
-
-    glGenVertexArrays(1, &orbit_object.vertex_AO);
-    glBindVertexArray(orbit_object.vertex_AO);
-
-    glGenBuffers(1, &orbit_object.vertex_BO);
-    glBindBuffer(GL_ARRAY_BUFFER, orbit_object.vertex_BO);
-    glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(sizeof(float)*orbits_container.size()), orbits_container.data(), GL_STATIC_DRAW);
-
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, GLsizei(sizeof(float)*3), (GLvoid*)(0));
-
-    orbit_object.draw_mode = GL_LINE_LOOP;
-    orbit_object.num_elements = GLsizei(orbit_point_num);
 }
 
 void ApplicationSolar::drawOrbit() const{
@@ -645,7 +815,6 @@ void ApplicationSolar::drawOrbit() const{
     }
 
   }
-
 }
 
 // Assignment 1
@@ -686,11 +855,22 @@ void ApplicationSolar::keyCallback(int key, int action, int mods) {
     //Assignment 3
     //default Blinn-Phong local illumination
     else if(key == GLFW_KEY_1 && (action == GLFW_PRESS || action == GLFW_REPEAT )){
-        ifCelShading = false;
+        modelType = 1;
         switchAppearance();
     }
     else if(key == GLFW_KEY_2 && (action == GLFW_PRESS || action == GLFW_REPEAT )){
-        ifCelShading = true;
+        modelType = 2;
+        switchAppearance();
+    }
+
+    //Assignment 4
+    else if(key == GLFW_KEY_3 && (action == GLFW_PRESS || action == GLFW_REPEAT )){  //skybox2
+        modelType = 3;
+        switchAppearance();
+    }
+
+    else if(key == GLFW_KEY_4 && (action == GLFW_PRESS || action == GLFW_REPEAT )){ // Normal Mapping
+        modelType = 4;
         switchAppearance();
     }
 }

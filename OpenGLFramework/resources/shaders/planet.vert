@@ -23,14 +23,10 @@ out vec2 pass_TexCoord;
 
 void main(){
 
-	gl_Position = (ProjectionMatrix  * ViewMatrix * ModelMatrix) * vec4(in_Position, 1.0);
-	pass_Normal = (NormalMatrix * vec4(in_Normal, 0.0)).xyz;
-	
+	gl_Position = (ProjectionMatrix  * ViewMatrix * ModelMatrix) * vec4(in_Position, 1.0); // gl_Position is transformed from Model Space to Porjection-Space
+
+	pass_Normal = (NormalMatrix * vec4(in_Normal, 0.0)).xyz;     // normal is transformed from Model Space to View Space
 	pass_Position = (ModelMatrix*vec4(in_Position, 1.0)).xyz; //world_position, object -> World space  
-
-// gl_Position is transformed from Model Space to Porjection-Space
-// normal is transformed from Model Space to View Space
-
 	pass_Eye_Position = (inverse(ViewMatrix)*vec4(0,0,0,1)).xyz;  //*vec4(0,0,0,1) can get the 4th column
 
 //Assignment 4:

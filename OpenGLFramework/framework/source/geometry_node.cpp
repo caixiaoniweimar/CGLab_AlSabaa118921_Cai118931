@@ -7,11 +7,12 @@ GeometryNode::GeometryNode():
 GeometryNode::~GeometryNode(){}
 
 GeometryNode::GeometryNode(shared_ptr<Node> const& parent, string const& name, string const& path, int const& depth, 
-		   float const& size, float const& speed, float const& distance, glm::fvec3 const& color, string const& textureFilePath):
+		   float const& size, float const& speed, float const& distance, glm::fvec3 const& color, string const& textureFilePath, bool const& ifNormalMapping):
 	Node{parent, name, path, depth, size, speed, distance},
 	model_{},
 	color_{color},
-	textureFilePath_{textureFilePath} {}
+	textureFilePath_{textureFilePath},
+	ifNormalMapping_{ifNormalMapping} {}
 
 model GeometryNode::getGeometry() const{
 	return model_;
@@ -62,4 +63,12 @@ all variables necessary for a pixel transfer
 */
 void GeometryNode::setPixelData(string const& textureFilePath){
 	this -> pixelData_ = texture_loader::file(textureFilePath);
+}
+
+bool GeometryNode::getIfNormalMapping() const{
+	return ifNormalMapping_;
+}
+
+void GeometryNode::setIfNormalMapping(bool const& ifNormalMapping){
+	this -> ifNormalMapping_ = ifNormalMapping;
 }
