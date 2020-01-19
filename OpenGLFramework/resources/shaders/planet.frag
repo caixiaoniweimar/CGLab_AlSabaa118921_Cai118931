@@ -4,27 +4,34 @@ in vec3 pass_Normal;
 in vec3 pass_Position;
 in vec3 pass_Eye_Position;
 
+//Assignment 4: add input vec2 pass_TexCoord
+//then sample the texture with pass_TexCoord and use it as diffuse and ambient color in the shading computation
+in vec2 pass_TexCoord;
+
 out vec4 out_Color;
 
 uniform vec3 PlanetColor;
-uniform vec3 Ambient; // only a color, usually really dark
+//uniform vec3 Ambient; // only a color, usually really dark
 uniform vec3 LightColor;  // cal_lightColor() method already intensity*light_color
 
 //Point light sources, put it at sun's position 
 vec3 lightPosition=vec3(0, 0, 0);
-uniform float Ka;
-uniform float Kd;
 uniform float Ks;
 
 uniform float Shininess;
 
-float reflectivity=5.0;
+float reflectivity=1.0;
 
 //CelShading: https://en.wikibooks.org/wiki/GLSL_Programming/Unity/Toon_Shading
 uniform bool ifCelShading;
 
-float UnlitOutlineThickness = 0.4;
-float LitOutlineThickness = 0.1;
+//Assignment 4
+uniform sampler2D colorTexture1; //declare sampler variable
+vec4 color1 = texture(colorTexture1, pass_TexCoord); //read data from sampler
+// use it as diffuse and ambient color in the shading computation
+
+vec3 Kd = vec3(color1.x, color1.y, color1.z);
+vec3 Ambient = vec3(color1.x, color1.y, color1.z);
 
 //Assignment3: BlinnPhong
 void main() {
@@ -39,7 +46,7 @@ void main() {
 		V = normalize(V); // view direction
 
 		//ambient
-		vec3 ambient = Ambient*Ka;
+		vec3 ambient = Ambient;
         
         //diffuse reflection:
 		float distance = length(lightPosition - pass_Position);
@@ -76,10 +83,10 @@ void main() {
 			outline = 1;
 		}		
 
-		out_Color = vec4( ((ambient + diffuseColor)*PlanetColor + specularColor*specLevel)*outline, 1.0); 
+		out_Color = vec4( ((ambient + diffuseColor)*PlanetColor + specularColor*specLevel)*outline, 1.0 ); 
 
 	}else{
-		out_Color = vec4( (ambient + diffuse)*PlanetColor + specular, 1.0);
+		out_Color = vec4( (ambient + diffuse)*PlanetColor + specular, 1.0) ;
 	}
 
 //Outlines: in a specific color along the silhouettes of the model (usually black)

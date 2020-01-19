@@ -13,6 +13,8 @@
 #include <vector>
 #include <glm/glm.hpp>
 #include <glm/vec3.hpp>
+
+#include <glm/gtx/string_cast.hpp>
 using namespace std;
 
 // implement planet struct which holds values for the needed properties
@@ -26,6 +28,7 @@ struct planet {
   float distance;
   float speed_relative_to_center; 
   glm::fvec3 color;
+  string texture_file_path;
 };
 
 // gpu representation of model
@@ -52,7 +55,8 @@ class ApplicationSolar : public Application {
   implement planet struct which holds values for the needed properties,
   store planets in a container as member of the applicationSolar class
   */
-  vector<shared_ptr<GeometryNode>> initializeAllPlanets() const;
+  void initializeAllPlanets();
+  void initializeTextures(vector<shared_ptr<GeometryNode>> planets_pointers) const;
   void drawPlanet() const;
   void drawStar() const;
   void drawOrbit() const;
@@ -66,24 +70,25 @@ class ApplicationSolar : public Application {
   shared_ptr<Node> scene_root = sceneGraph -> getRoot();
 
 //Assignment 3, initialize point light for sun
-  const float lightIntensity = 500.0; //light brightness
+  const float lightIntensity = 300.0; //light brightness
   const glm::vec3 lightColor = glm::vec3{1, 1, 1};      //point_light{parent, name, path,......}
   PointLightNode point_light{scene_root, "point_light", "root/point_light", lightIntensity, lightColor};
   shared_ptr<PointLightNode> p_point_light = make_shared<PointLightNode>(point_light);
 
   vector<planet> planets{   // name, parent, depth, size, speed, distance, speed_relative_to_center
-    {"sun", "point_light", "root/point_light/sun", 2, 1.0f, 0.0f, 0.0f,  0.0f, glm::fvec3{1.0f, 0.0f, 0.0f} },//Red
-    {"mercury", "mercury_holder", "root/mercury_holder/mercury", 2, 0.90f, 0.7f, 18.0f, 0.10f, glm::fvec3{0.0f, 0.0f, 1.0f} }, //Blue
-    {"venus", "venus_holder", "root/venus_holder/venus", 2, 0.80f, 0.6f, 16.0f, 0.2f, glm::fvec3{0.0f, 0.8f, 0.0f}  }, //Green
-    {"earth","earth_holder", "root/earth_holder/earth", 2, 0.70f, 0.5f, 14.0f, 0.3f, glm::fvec3{0.3f, 0.0f, 1.0f} }, //Purple
-    {"moon", "earth", "root/earth_holder/earth/moon", 3, 0.20f, 0.8f, 13.0f, 0.0f, glm::fvec3{0.9f, 0.5f, 0.0f} },//Orange
-    {"mars", "mars_holder", "root/mars_holder/mars",2, 0.5f, 0.65f, 10.0f, 0.5f, glm::fvec3{0.9f, 0.5f, 0.9f} },//Pink
-    {"jupiter","jupiter_holder", "root/jupiter_holder/jupiter", 2, 0.4f, 0.7f, 8.0f, 0.6f, glm::fvec3{0.9f, 1.0f, 0.3f} },//light Green
-    {"saturn", "saturn_holder","root/saturn_holder/saturn", 2, 0.3f, 0.75f, 6.0f, 0.7f, glm::fvec3{1.0f, 1.0f, 0.1f}  },//Yellow
-    {"uranus","uranus_holder","root/uranus_holder/uranus",2, 0.2f, 0.8f, 4.0f, 0.8f, glm::fvec3{1.0f, 0.5f, 0.5f} }, //light Pink
-    {"neptune","neptune_holder","root/neptune_holder/neptune",2, 0.1f, 0.5f, 2.0f, 0.9f, glm::fvec3{0.9f, 0.6f, 0.1f} }//dark Yellow
+    {"sun", "point_light", "root/point_light/sun", 2, 1.0f, 0.0f, 0.0f,  0.0f, glm::fvec3{0.98f, 0.97f, 0.66f}, m_resource_path+"textures/sunmapthumb.png" },//light yellow
+    {"mercury", "mercury_holder", "root/mercury_holder/mercury", 2, 0.90f, 0.7f, 10.0f, 0.50f, glm::fvec3{0.86f, 0.73f, 0.55f}, m_resource_path+"textures/mercurymapthumb.png"  }, //light brown
+    {"venus", "venus_holder", "root/venus_holder/venus", 2, 0.80f, 0.6f, 9.0f, 0.5f, glm::fvec3{0.81f, 0.57f, 0.18f}, m_resource_path+"textures/venusmapthumb.png"  }, //dark brown
+    {"earth","earth_holder", "root/earth_holder/earth", 2, 0.70f, 0.5f, 8.0f, 0.5f, glm::fvec3{0.27f, 0.46f, 0.63f}, m_resource_path+"textures/earthmapthumb.png" }, //blue
+    {"moon", "earth", "root/earth_holder/earth/moon", 3, 0.30f, 0.3f, 2.0f, 0.0f, glm::fvec3{0.82f, 0.83f, 0.84f}, m_resource_path+"textures/moonmapthumb.png" },//gray
+    {"mars", "mars_holder", "root/mars_holder/mars",2, 0.5f, 0.65f, 6.0f, 0.5f, glm::fvec3{0.83f, 0.53f, 0.34f}, m_resource_path+"textures/marsmapthumb.png" },//red brown
+    {"jupiter","jupiter_holder", "root/jupiter_holder/jupiter", 2, 0.4f, 0.7f, 5.0f, 0.6f, glm::fvec3{0.69f, 0.62f, 0.55f}, m_resource_path+"textures/jupitermapthumb.png" },//? 
+    {"saturn", "saturn_holder","root/saturn_holder/saturn", 2, 0.3f, 0.75f, 4.0f, 0.7f, glm::fvec3{0.86f, 0.71f, 0.57f}, m_resource_path+"textures/saturnmapthumb.png"  },//?
+    {"uranus","uranus_holder","root/uranus_holder/uranus",2, 0.2f, 0.2f, 3.0f, 1.5f, glm::fvec3{0.58f, 0.68f, 0.72f}, m_resource_path+"textures/uranusmapthumb.png" }, //light Blue
+    {"neptune","neptune_holder","root/neptune_holder/neptune",2, 0.2f, 0.2f, 2.0f, 20.0f, glm::fvec3{0.49f, 0.59f, 0.88f}, m_resource_path+"textures/neptunemapthumb.png" }//some Blue
   };
   vector<shared_ptr<GeometryNode>> planets_pointers;
+  vector<shared_ptr<Node>> holder_nodes_pointers;
 
  protected:
   void initializeShaderPrograms();

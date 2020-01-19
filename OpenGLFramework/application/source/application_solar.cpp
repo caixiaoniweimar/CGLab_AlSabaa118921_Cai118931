@@ -23,11 +23,9 @@ const int star_num = 5000;
 const int orbit_point_num = 360000;
 // Assignment 3:
 // Later every planet can have their own parameter Ka;
-const glm::vec3 ambient = glm::vec3{0.2, 0.2, 0.2};
-const float Ka = 1.0f; // how much of ambient light is reflected by the object, 0~1
-const float Kd = 0.5f;
-const float Ks = 0.7f;
-const float shininess = 24;
+//const glm::vec3 ambient = glm::vec3{0.2, 0.2, 0.2};
+const float Ks = 0.5f;
+const float shininess = 16;
 
 ApplicationSolar::ApplicationSolar(std::string const& resource_path)
  :Application{resource_path}
@@ -38,10 +36,17 @@ ApplicationSolar::ApplicationSolar(std::string const& resource_path)
   initializeGeometry();
   initializeShaderPrograms();
   //Assignment 1
-  planets_pointers=initializeAllPlanets();
+  //planets_pointers=initializeAllPlanets();
+  initializeAllPlanets();
+  //Assignment 4
+  initializeTextures(planets_pointers);
   //Assignment 2
   initializeAllStars();
   initializeAllOrbits();
+  for(auto const& p_holder: holder_nodes_pointers){
+    p_holder -> setLocalTransform( glm::rotate(p_holder->getLocalTransform(), float(glfwGetTime())*p_holder->getSpeed(), glm::fvec3{0.0f, 1.0f, 0.0f}) );
+    p_holder -> setWorldTransform( (scene_root -> getWorldTransform())*p_holder->getLocalTransform() );
+  }
 }
 
 ApplicationSolar::~ApplicationSolar() {
@@ -61,15 +66,14 @@ void ApplicationSolar::render() const{
 
   //Assignment 1
   drawPlanet();
-  sceneGraph->printGraph();
+  //sceneGraph->printGraph();
 
   //Assignment 2
   drawStar();
   drawOrbit();
 
   //test methods, both work
-  //scene_root->getChildren("sun").getChildren("mars");
-  //scene_root->getChildren("sun").removeChildren("mars");
+  //auto neptune = (scene_root->getChildren("neptune_holder")).getChildren("neptune");
 }
 
 void ApplicationSolar::uploadView() {
@@ -135,13 +139,13 @@ void ApplicationSolar::initializeShaderPrograms() {
   m_shaders.at("planet").u_locs["ProjectionMatrix"] = -1;
 
   m_shaders.at("planet").u_locs["PlanetColor"] = -1;
-  m_shaders.at("planet").u_locs["Ambient"] = -1;
-  m_shaders.at("planet").u_locs["Ka"] = -1;
-  m_shaders.at("planet").u_locs["Kd"] = -1;
   m_shaders.at("planet").u_locs["Ks"] = -1;
   m_shaders.at("planet").u_locs["Shininess"] = -1;
   m_shaders.at("planet").u_locs["LightColor"] = -1;
   m_shaders.at("planet").u_locs["ifCelShading"] = false;
+
+  //Aufgabe4
+  m_shaders.at("planet").u_locs["colorTexture1"]=-1;
 
   // Assignment 2
   // use predefined vertex shader and fragment shader
@@ -161,7 +165,7 @@ void ApplicationSolar::initializeShaderPrograms() {
 
 // load models
 void ApplicationSolar::initializeGeometry() {
-    model planet_model = model_loader::obj(m_resource_path + "models/sphere.obj", model::NORMAL);
+    model planet_model = model_loader::obj(m_resource_path + "models/sphere.obj", model::NORMAL | model::TEXCOORD);
   
     // Initialise Vertex Array Object
 
@@ -191,6 +195,9 @@ void ApplicationSolar::initializeGeometry() {
     // second attribute is 3 floats with no offset & stride
     glVertexAttribPointer(1, model::NORMAL.components, model::NORMAL.type, GL_FALSE, planet_model.vertex_bytes, planet_model.offsets[model::NORMAL]);
 
+    //Assignment4 -> in vec2 in_TexCoord;
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, model::TEXCOORD.components, model::TEXCOORD.type, GL_FALSE, planet_model.vertex_bytes, planet_model.offsets[model::TEXCOORD]);
     // Define Vertex Indices(optional)
 
     // generate generic buffer
@@ -208,59 +215,6 @@ void ApplicationSolar::initializeGeometry() {
 
 // Assignment 1
 /*
-draw all Planets
-load model, 
-for each planet, set model and then update the model_matrix and normal_matrix;
-in render() apply drawPlanet() method
-*/
-void ApplicationSolar::drawPlanet() const{
-
-  model planet_model = model_loader::obj(m_resource_path + "models/sphere.obj", model::NORMAL);
-
-  for(auto const& p_node: planets_pointers){
-    p_node -> setGeometry(planet_model);
-    glm::fmat4 model_matrix = update_planet_transform(p_node);
-
-    //extra matrix for normal transformation to keep them orthogonal to surface
-    glm::fmat4 normal_matrix = glm::inverseTranspose(glm::inverse(m_view_transform)* model_matrix);
-
-    //bind shader to upload uniforms
-    glUseProgram(m_shaders.at("planet").handle);
-    //give matrices to shaders
-    glUniformMatrix4fv(m_shaders.at("planet").u_locs.at("ModelMatrix"),
-                 1, GL_FALSE, glm::value_ptr(model_matrix));
-
-    glUniformMatrix4fv(m_shaders.at("planet").u_locs.at("NormalMatrix"),
-                 1, GL_FALSE, glm::value_ptr(normal_matrix));
-
-    //Assignment3
-    //give planetColor to vertex shaders
-    //glUniform3f(GLint location, GLfloatv0, v1, v2)
-    glUniform3f(m_shaders.at("planet").u_locs.at("PlanetColor"), (p_node -> getColor()).x, (p_node -> getColor()).y, (p_node -> getColor()).z);
-    glUniform3f(m_shaders.at("planet").u_locs.at("Ambient"), ambient.x, ambient.y, ambient.z);
-    glUniform1f(m_shaders.at("planet").u_locs.at("Ka"), Ka);
-    glUniform1f(m_shaders.at("planet").u_locs.at("Kd"), Kd);
-    glUniform1f(m_shaders.at("planet").u_locs.at("Ks"), Ks);
-    glUniform1f(m_shaders.at("planet").u_locs.at("Shininess"), shininess);
-
-    glUniform3f(m_shaders.at("planet").u_locs.at("LightColor"), p_point_light->cal_lightColor().x, p_point_light->cal_lightColor().y, p_point_light->cal_lightColor().z);
-
-
-    // Drawing:
-
-    // bind the VAO to draw
-    glBindVertexArray(planet_object.vertex_AO);
-
-    // draw bound vertex array using bound shader
-    // Using indices and parameters
-    glDrawElements(planet_object.draw_mode, planet_object.num_elements, model::INDEX.type, NULL);
-
-  }
-
-}
-
-// Assignment 1
-/*
 initialize each planet in planets
 three kinds of situations:
 (1) planet.parent == root,
@@ -271,25 +225,27 @@ there are 8 nodes that their parent is sun.  add them as children of sun
 only moon's parent is earth, add moon as child of earth, the depth of moon is 3. deepest
 return vector<shared_ptr<GeometryNode>>
 */
-vector<shared_ptr<GeometryNode>> ApplicationSolar::initializeAllPlanets() const{
-   vector<shared_ptr<GeometryNode>> geometry_nodes;
+void ApplicationSolar::initializeAllPlanets(){
+    //vector<shared_ptr<GeometryNode>> geometry_nodes;
 
     for(int i=0; i<planets.size(); i++){
       planet planet = planets[i];
       if(planet.parent == "point_light"){
 
         //parent,name,path......
-        GeometryNode sun{p_point_light, planet.name, planet.path, planet.depth, planet.size, planet.speed, planet.distance, planet.color};
+        GeometryNode sun{p_point_light, planet.name, planet.path, planet.depth, planet.size, planet.speed, planet.distance, planet.color, planet.texture_file_path};
         auto const p_sun = make_shared<GeometryNode>(sun);
+        //Assignment 4
+        p_sun -> setPixelData(planet.texture_file_path);
 
         scene_root -> addChildren(p_point_light);
         p_point_light -> addChildren(p_sun);
 
-        geometry_nodes.push_back(p_sun);
+        planets_pointers.push_back(p_sun);
   
       }else if(planet.parent =="earth"){ // add moon
 
-        auto p_earth = geometry_nodes[3]; 
+        auto p_earth = planets_pointers[3]; 
         //string parent_name = p_earth -> getParent() -> getName();
         //Node holder_node{p_earth->getParent(), planet.name+"_holder", "root/"+parent_name+"/"+planet.name+"_holder", planet.speed_relative_to_center};
         //auto const p_holder_node = make_shared<Node>(holder_node);
@@ -298,80 +254,104 @@ vector<shared_ptr<GeometryNode>> ApplicationSolar::initializeAllPlanets() const{
         //holder_node.setLocalTransform( glm::rotate(holder_node.getLocalTransform(), float(glfwGetTime())*holder_node.getSpeed(), glm::fvec3{0.0f, 1.0f, 0.0f}) );
         //holder_node.setWorldTransform( (holder_node.getParent()-> getWorldTransform())*holder_node.getLocalTransform() );
 
-        GeometryNode node{p_earth, planet.name, planet.path, planet.depth, planet.size, planet.speed, planet.distance, planet.color};
+        GeometryNode node{p_earth, planet.name, planet.path, planet.depth, planet.size, planet.speed, planet.distance, planet.color, planet.texture_file_path};
         auto const& p_node = make_shared<GeometryNode>(node);
+        //Assignment 4
+        p_node -> setPixelData(planet.texture_file_path);
         //p_holder_node -> addChildren(p_node);
         p_earth -> addChildren(p_node);
-        geometry_nodes.push_back(p_node);
+        planets_pointers.push_back(p_node);
       }else{ //other planets except sun and earth
         //create a holderNode for each planet, parent, name, path, speed
         //root add this holderNode as scene's child, set local/worldTransform for holder_node
         //create planet_node, add this planet_node as holderNode's child
         Node holder_node{scene_root, planet.name+"_holder", "root/"+planet.name+"_holder", planet.speed_relative_to_center};
         auto const p_holder_node = make_shared<Node>(holder_node);
-        scene_root -> addChildren(p_holder_node);
-        holder_node.setLocalTransform( glm::rotate(holder_node.getLocalTransform(), float(glfwGetTime())*holder_node.getSpeed(), glm::fvec3{0.0f, 1.0f, 0.0f}) );
-        holder_node.setWorldTransform( (scene_root -> getWorldTransform())*holder_node.getLocalTransform() );
 
-        GeometryNode node{p_holder_node, planet.name, planet.path, planet.depth, planet.size, planet.speed, planet.distance, planet.color};
+        //holder_node.setLocalTransform( glm::rotate(holder_node.getLocalTransform(), float(glfwGetTime())*holder_node.getSpeed(), glm::fvec3{0.0f, 1.0f, 0.0f}) );
+        //holder_node.setWorldTransform( (scene_root -> getWorldTransform())*holder_node.getLocalTransform() );
+        scene_root -> addChildren(p_holder_node);
+        //cout<<holder_node.getSpeed()<<endl;
+        //cout<<glm::to_string(holder_node.getLocalTransform())<<endl;
+        //cout<<"3 "<<glm::to_string(holder_node.getWorldTransform())<<endl;
+        holder_nodes_pointers.push_back(p_holder_node);
+
+        GeometryNode node{p_holder_node, planet.name, planet.path, planet.depth, planet.size, planet.speed, planet.distance, planet.color, planet.texture_file_path};
         auto const& p_node = make_shared<GeometryNode>(node);
+        //Assignment 4
+        p_node -> setPixelData(planet.texture_file_path);
+
         p_holder_node -> addChildren(p_node);
-        geometry_nodes.push_back(p_node);
+        planets_pointers.push_back(p_node);
       }
     }
-    return geometry_nodes;
+    //return geometry_nodes;
 }
 
-// Assignment 1
-/*
-For each planet, it's important to update their local transform and world transfrom
-The local coordinate system is only relative to a single model, 
-and the world coordinates are used to determine the position of the local coordinate system of each model.
+// Assignment 4
+void ApplicationSolar::initializeTextures(vector<shared_ptr<GeometryNode>> planets_pointers) const{
+  for(auto const& planet : planets_pointers){
+      auto pixel_data = planet -> getPixelData();
+      auto texture_object = planet -> getTextureObject();
 
-In SceneGraph: Every Node inherit the coordinate system of their ancestor.
-Then, every node defines its own local coordinate system, the root defines the world coordinate system.
+      /*
+      to prevent accidental modifications it's best to use the GL_TEXTURE0 unit only for formtting and to bind textures to another unit
+      for the actual accessing
 
-local transform:
-represent its position and orientation in relation to its parent node, can contain translation, rotation, and scaling information.
+      void glActiveTexture(GLenum texture);
+      texture: specifies which texture unit to make active. 'texture' must be one of GL_TEXTUREi, where 0<=i<GL_MAX_TEXTURE_UNITS
+      the initial value is GL_TEXTURE0; The number of texture units is implementation dependent, must be at least 2.
+      */
 
-local_transform = translationMatrix * rotationMatrix*scaleMatrix;
+      glActiveTexture(GL_TEXTURE0); //activate Texture Unit to which to bind texture
 
-world transform:
-need each node’s world transformation, to use as the model matrix in a vertex shader.
-we must go through the whole graph, starting from the root, 
-the world transformation for each node can be calculated by multiplying a node’s local transformation matrix 
-with the world transformation of its parent. 
+      /*
+      glGenTextures(GLsizei n, GLuint* textures)
+      n: specifies the number of texture names to be generated, here only one
+      textures: specifies an array in which the generated texture names are stored
 
-We store both local and world transformations for each planet, 
-so that we don't need to go through the tree every time. -> avoid a lot of unnecessary multiplications
-*/
-glm::fmat4 ApplicationSolar::update_planet_transform(shared_ptr<Node> node) const{
-  
-  glm::fmat4 model_matrix = glm::fmat4{1.0f};
+      struct texture_object {
+          // handle of texture object
+          GLuint handle = 0;
+          // binding point
+          GLenum target = GL_NONE;
+      };
+      */
+      glGenTextures(1, &texture_object.handle); //generate Texture Object;
+      
+      /*
+      bind Texture Object to 2d texture binding point of unit
+      glBindTexture(GLenum target, GLuint texture);
+      target: Specifies the target to which the texture is bound.
+      */
+      glBindTexture(GL_TEXTURE_2D, texture_object.handle);
 
-  if(node->getParent() != nullptr){  // if node is not root; if root, use default local_transform and world_transform
-    
-    glm::fmat4 local_transform = glm::fmat4{1.0f};
-    float size = node->getSize();
-    float speed = node->getSpeed();
-    glm::fvec3 distance = node->getDistance();
+      //define interpolation type when fragment covers multiple texels(texture pixels)
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+      //define interpolation type when fragment does not exactly cover one texel
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    local_transform = glm::scale(local_transform, glm::fvec3{size,size,size});
-    local_transform = glm::rotate(local_transform, float(glfwGetTime())*speed, glm::fvec3{0.0f, 1.0f, 0.0f});
-    local_transform = glm::translate(local_transform, distance);
+      /*
+      glTexImage2D(target, level, internalformat, width, height, border, format, type, *data);
+      target: GL_TEXTURE_2D, binding point for the texture
+      level: 0, for no mipmaps
+      internalformat(image_format): specifies the storage format containg number of channels(Specifies the number of color components in the texture),
+      https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glTexImage2D.xhtml
+      internalformat may be one of the base internal formats shown in Table 1, similar with pixel_data.channels 
 
-    node -> setLocalTransform(local_transform);
-    
-/*
-each node's world transformation: use as model matrix in a vertex shader
-the world transformation for each node can be calculated by multiplying a node's local transformation matrix with the world 
-transformation of its parent.
-*/
-    model_matrix = (node -> getParent() -> getWorldTransform()) * local_transform;
-    node -> setWorldTransform(model_matrix);
+      format, type, data -> pixel transfer parameters, describe how the image is represented in memory
+      format: specifies the number of channels for color data, Specifies the format of the pixel data. The following symbolic values are accepted: GL_RED, GL_RG, GL_RGB, GL_BGR, GL_RGBA... 
+      type: specifies the data type and size of the color data values per channel, 
+            Specifies the data type of the pixel data. The following symbolic values are accepted: GL_UNSIGNED_BYTE, GL_BYTE, GL_UNSIGNED_SHORT, GL_SHORT, GL_UNSIGNED_INT, GL_INT, GL_HALF_FLOAT, GL_FLOAT,
+      data: the location of the pixel data
 
+      pixel_data constructure:
+      pixel_data():pixels(),width{0},height{0},depth{0},channels{GL_NONE},channel_type{GL_NONE}{}
+      */
+      //Pixel Transfer opration
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, pixel_data.width, pixel_data.height, 0, pixel_data.channels, pixel_data.channel_type ,pixel_data.ptr());
+      planet -> setTextureObject(texture_object);
   }
-  return model_matrix;
 }
 
 // Assignment 2
@@ -451,6 +431,126 @@ void ApplicationSolar::initializeAllStars(){
 
 }
 
+// Assignment 1
+/*
+draw all Planets
+load model, 
+for each planet, set model and then update the model_matrix and normal_matrix;
+in render() apply drawPlanet() method
+*/
+void ApplicationSolar::drawPlanet() const{
+
+  model planet_model = model_loader::obj(m_resource_path + "models/sphere.obj", model::NORMAL);
+
+  for(auto const& p_node: planets_pointers){
+    p_node -> setGeometry(planet_model);
+    glm::fmat4 model_matrix = update_planet_transform(p_node);
+
+    //extra matrix for normal transformation to keep them orthogonal to surface
+    glm::fmat4 normal_matrix = glm::inverseTranspose(glm::inverse(m_view_transform)* model_matrix);
+
+    //bind shader to upload uniforms
+    glUseProgram(m_shaders.at("planet").handle);
+    //give matrices to shaders
+    glUniformMatrix4fv(m_shaders.at("planet").u_locs.at("ModelMatrix"),
+                 1, GL_FALSE, glm::value_ptr(model_matrix));
+
+    glUniformMatrix4fv(m_shaders.at("planet").u_locs.at("NormalMatrix"),
+                 1, GL_FALSE, glm::value_ptr(normal_matrix));
+
+    //Assignment3
+    //give planetColor to vertex shaders
+    //glUniform3f(GLint location, GLfloatv0, v1, v2)
+    glUniform3f(m_shaders.at("planet").u_locs.at("PlanetColor"), (p_node -> getColor()).x, (p_node -> getColor()).y, (p_node -> getColor()).z);
+    glUniform1f(m_shaders.at("planet").u_locs.at("Ks"), Ks);
+    glUniform1f(m_shaders.at("planet").u_locs.at("Shininess"), shininess);
+
+    glUniform3f(m_shaders.at("planet").u_locs.at("LightColor"), p_point_light->cal_lightColor().x, p_point_light->cal_lightColor().y, p_point_light->cal_lightColor().z);
+
+    //Assignment 4: Texture Usage
+    /*
+    1. in the shader, textures are accessed through sampler uniforms
+    2. the sampler type defines which binding point is accessed -> GL_TEXTURE_2D
+    3. the samplers holds an interger with the index of the Texture Unit that is should access as value
+    4. the index must be uploaded to the sampler value with glUniform1i
+    */
+    //Bind for Accessing
+    glActiveTexture(GL_TEXTURE0); //active Texture Unit to which to bind texture
+    auto texture_object = p_node -> getTextureObject();
+    glBindTexture(GL_TEXTURE_2D, texture_object.handle); //bind Texture OBject to 2D texture binding point of unit
+
+    //Upload Texture
+    glUniform1i(m_shaders.at("planet").u_locs.at("colorTexture1"), 0); // 0-> the index of Texture Unit
+
+    // Drawing:
+
+    // bind the VAO to draw
+    glBindVertexArray(planet_object.vertex_AO);
+
+    // draw bound vertex array using bound shader
+    // Using indices and parameters
+    glDrawElements(planet_object.draw_mode, planet_object.num_elements, model::INDEX.type, NULL);
+
+  }
+
+}
+
+// Assignment 1
+/*
+For each planet, it's important to update their local transform and world transfrom
+The local coordinate system is only relative to a single model, 
+and the world coordinates are used to determine the position of the local coordinate system of each model.
+
+In SceneGraph: Every Node inherit the coordinate system of their ancestor.
+Then, every node defines its own local coordinate system, the root defines the world coordinate system.
+
+local transform:
+represent its position and orientation in relation to its parent node, can contain translation, rotation, and scaling information.
+
+local_transform = translationMatrix * rotationMatrix*scaleMatrix;
+
+world transform:
+need each node’s world transformation, to use as the model matrix in a vertex shader.
+we must go through the whole graph, starting from the root, 
+the world transformation for each node can be calculated by multiplying a node’s local transformation matrix 
+with the world transformation of its parent. 
+
+We store both local and world transformations for each planet, 
+so that we don't need to go through the tree every time. -> avoid a lot of unnecessary multiplications
+*/
+glm::fmat4 ApplicationSolar::update_planet_transform(shared_ptr<Node> node) const{
+  
+  glm::fmat4 model_matrix = glm::fmat4{1.0f};
+
+  //if(node->getParent() != nullptr){  // if node is not root; if root, use default local_transform and world_transform
+    
+    glm::fmat4 local_transform = glm::fmat4{1.0f};
+    float size = node->getSize();
+    float speed = node->getSpeed();
+    glm::fvec3 distance = node->getDistance();
+
+    local_transform = glm::rotate(local_transform, float(glfwGetTime())*speed, glm::fvec3{0.0f, 1.0f, 0.0f});
+    local_transform = glm::translate(local_transform, 1.0f*distance);
+
+    local_transform = glm::scale(local_transform, glm::fvec3{size,size,size});
+
+    node -> setLocalTransform(local_transform);
+    
+/*
+each node's world transformation: use as model matrix in a vertex shader
+the world transformation for each node can be calculated by multiplying a node's local transformation matrix with the world 
+transformation of its parent.
+*/
+    //cout<<glm::to_string(node->getParent()->getWorldTransform())<<endl;
+    model_matrix = (node -> getParent() -> getWorldTransform()) * local_transform;
+
+    node -> setWorldTransform(model_matrix);
+
+  //}
+  return model_matrix;
+}
+
+
 void ApplicationSolar::drawStar() const{
     // Drawing:
 
@@ -508,20 +608,17 @@ void ApplicationSolar::initializeAllOrbits(){
 
 void ApplicationSolar::drawOrbit() const{
 
-  int i=0;
   for(auto const& p_node: planets_pointers){
     if( (p_node->getName()!="sun") && (p_node -> getName()!= "moon") ){
-      i=i+1;
-      /*
-      the distance between planet and sun, 18, 16, 14, 12, 10, 8.....
-      the size of planet relative to sun, 0.9, 0.8, 0.7, 0.6.....
-      find the multiple relationship in oder to calculate the radius of the rabit
-      */
   
-      glm::fmat4 orbit_transform_matrix = glm::fmat4{1.0f};
-      float radius = p_node->getDistanceX() - 2*i*(p_node -> getSize());
-      orbit_transform_matrix = glm::scale(orbit_transform_matrix, glm::fvec3{radius,radius,radius});
+      glm::fmat4 orbit_transform_matrix = glm::fmat4{};
 
+      auto parent = p_node-> getParent();
+
+      float radius = p_node->getDistanceX();
+      
+      orbit_transform_matrix = glm::scale(orbit_transform_matrix, glm::fvec3{radius,radius,radius});
+      
       //bind shader to upload uniforms
       glUseProgram(m_shaders.at("orbit").handle);
       //give matrices to shaders
@@ -533,10 +630,10 @@ void ApplicationSolar::drawOrbit() const{
       glBindVertexArray(orbit_object.vertex_AO);
       glDrawArrays(orbit_object.draw_mode, 0, orbit_object.num_elements);
     }else if(p_node -> getName()=="moon"){
-      i=i+1;
       glm::fmat4 orbit_transform_matrix = glm::fmat4{1.0f};
-      float radius=(p_node -> getParent() -> getDistanceX() - p_node-> getDistanceX())+2*i*p_node->getSize();
-      orbit_transform_matrix = glm::scale(p_node -> getParent() -> getLocalTransform(), glm::fvec3{radius,radius,radius});
+      float radius=p_node-> getDistanceX();
+
+      orbit_transform_matrix = glm::scale(p_node -> getParent() -> getWorldTransform(), glm::fvec3{radius,radius,radius});
 
             //bind shader to upload uniforms
       glUseProgram(m_shaders.at("orbit").handle);
@@ -557,32 +654,32 @@ void ApplicationSolar::drawOrbit() const{
 void ApplicationSolar::keyCallback(int key, int action, int mods) {
     //zoom in: X
     if (key == GLFW_KEY_X  && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
-        m_view_transform = glm::translate(m_view_transform, glm::fvec3{0.0f, 0.0f, -0.5f});
+        m_view_transform = glm::translate(m_view_transform, glm::fvec3{0.0f, 0.0f, -0.3f});
         uploadView();
     }
     //zoom out: C
     else if (key == GLFW_KEY_C  && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
-        m_view_transform = glm::translate(m_view_transform, glm::fvec3{0.0f, 0.0f, 0.5f});
+        m_view_transform = glm::translate(m_view_transform, glm::fvec3{0.0f, 0.0f, 0.3f});
         uploadView();
     }
     //move left: A
     else if(key == GLFW_KEY_A && (action == GLFW_PRESS || action == GLFW_REPEAT )){
-        m_view_transform = glm::translate(m_view_transform, glm::fvec3{0.2f, 0.0f, 0.0f});
+        m_view_transform = glm::translate(m_view_transform, glm::fvec3{-0.2f, 0.0f, 0.0f});
         uploadView();
     }
     //move right: D
     else if(key == GLFW_KEY_D && (action == GLFW_PRESS || action == GLFW_REPEAT )){
-        m_view_transform = glm::translate(m_view_transform, glm::fvec3{-0.2f, 0.0f, 0.0f});
+        m_view_transform = glm::translate(m_view_transform, glm::fvec3{0.2f, 0.0f, 0.0f});
         uploadView();
     }
     //move up: W
     else if(key == GLFW_KEY_W && (action == GLFW_PRESS || action == GLFW_REPEAT )){
-        m_view_transform = glm::translate(m_view_transform, glm::fvec3{0.0f, -0.2f, 0.0f});
+        m_view_transform = glm::translate(m_view_transform, glm::fvec3{0.0f, 0.2f, 0.0f});
         uploadView();
     }
     //move down: S
     else if(key == GLFW_KEY_S && (action == GLFW_PRESS || action == GLFW_REPEAT )){
-        m_view_transform = glm::translate(m_view_transform, glm::fvec3{0.0f, 0.2f, 0.0f});
+        m_view_transform = glm::translate(m_view_transform, glm::fvec3{0.0f, -0.2f, 0.0f});
         uploadView();
     }
 

@@ -5,6 +5,9 @@
 //2nd is normal in Model Space 
 layout(location = 0) in vec3 in_Position;
 layout(location = 1) in vec3 in_Normal;
+//Assignment 4
+//add another input attribute in_Texcord, is directly assigned to an output variable vec2 pass_TexCoord
+layout(location = 2) in vec2 in_TexCoord;
 
 //Matrix Uniforms uploaded with glUniformMatrix4fv
 uniform mat4 ModelMatrix;
@@ -15,6 +18,8 @@ uniform mat4 NormalMatrix;
 out vec3 pass_Normal;
 out vec3 pass_Position;
 out vec3 pass_Eye_Position;
+//Assignment 4:
+out vec2 pass_TexCoord;
 
 void main(){
 
@@ -27,6 +32,9 @@ void main(){
 // normal is transformed from Model Space to View Space
 
 	pass_Eye_Position = (inverse(ViewMatrix)*vec4(0,0,0,1)).xyz;  //*vec4(0,0,0,1) can get the 4th column
+
+//Assignment 4:
+	pass_TexCoord = in_TexCoord;
 }
 
 //helpful link: https://www.3dgep.com/understanding-the-view-matrix/

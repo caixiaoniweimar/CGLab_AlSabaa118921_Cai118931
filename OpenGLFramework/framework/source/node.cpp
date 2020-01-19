@@ -31,7 +31,7 @@ Node::Node(shared_ptr<Node> const& parent, string const& name, string const& pat
 	name_{name},
 	path_{path},
 	depth_{1},
-	speed_{0.0f},
+	speed_{speed},
 	distance_{glm::fvec3{0.0f,0.0f,0.0f}},
 	size_{0.0f} {}
 
