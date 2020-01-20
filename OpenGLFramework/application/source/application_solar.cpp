@@ -407,9 +407,9 @@ void ApplicationSolar::initializeTextures(){
 
     //a cubemap consists of 6 textures, one for each face, have to call glTexImage2D 6 times with their parameters set to values
     //set the texture target paramenter to a specific face of the cubemap
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGBA, pixel_data_bk.width, pixel_data_bk.height, 0, pixel_data_bk.channels, pixel_data_bk.channel_type, pixel_data_bk.ptr()); // Back, bk
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGBA, pixel_data_bk.width, pixel_data_bk.height, 0, pixel_data_bk.channels, pixel_data_bk.channel_type, pixel_data_bk.ptr()); // Back, bk
     glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGBA, pixel_data_dn.width, pixel_data_dn.height, 0, pixel_data_dn.channels, pixel_data_dn.channel_type, pixel_data_dn.ptr()); // Bottom, dn
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGBA, pixel_data_ft.width, pixel_data_ft.height, 0, pixel_data_ft.channels, pixel_data_ft.channel_type, pixel_data_ft.ptr()); // Front, ft 
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGBA, pixel_data_ft.width, pixel_data_ft.height, 0, pixel_data_ft.channels, pixel_data_ft.channel_type, pixel_data_ft.ptr()); // Front, ft 
     glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGBA, pixel_data_lf.width, pixel_data_lf.height, 0, pixel_data_lf.channels, pixel_data_lf.channel_type, pixel_data_lf.ptr()); // Left, lf
     glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGBA, pixel_data_rt.width, pixel_data_rt.height, 0, pixel_data_rt.channels, pixel_data_rt.channel_type, pixel_data_rt.ptr()); // Right, rt
     glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGBA, pixel_data_up.width, pixel_data_up.height, 0, pixel_data_up.channels, pixel_data_up.channel_type, pixel_data_up.ptr()); // Top, up
@@ -440,9 +440,9 @@ void ApplicationSolar::initializeTextures(){
     //a cubemap consists of 6 textures, one for each face, have to call glTexImage2D 6 times with their parameters set to values
     //set the texture target paramenter to a specific face of the cubemap
     //cout<<"1 "<<pixel_data_up.channels<<endl;
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGBA, pixel_data_bk2.width, pixel_data_bk2.height, 0, pixel_data_bk2.channels, pixel_data_bk2.channel_type, pixel_data_bk2.ptr()); // Back, bk
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGBA, pixel_data_bk2.width, pixel_data_bk2.height, 0, pixel_data_bk2.channels, pixel_data_bk2.channel_type, pixel_data_bk2.ptr()); // Back, bk
     glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGBA, pixel_data_dn2.width, pixel_data_dn2.height, 0, pixel_data_dn2.channels, pixel_data_dn2.channel_type, pixel_data_dn2.ptr()); // Bottom, dn
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGBA, pixel_data_ft2.width, pixel_data_ft2.height, 0, pixel_data_ft2.channels, pixel_data_ft2.channel_type, pixel_data_ft2.ptr()); // Front, ft 
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGBA, pixel_data_ft2.width, pixel_data_ft2.height, 0, pixel_data_ft2.channels, pixel_data_ft2.channel_type, pixel_data_ft2.ptr()); // Front, ft 
     glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGBA, pixel_data_lf2.width, pixel_data_lf2.height, 0, pixel_data_lf2.channels, pixel_data_lf2.channel_type, pixel_data_lf2.ptr()); // Left, lf
     glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGBA, pixel_data_rt2.width, pixel_data_rt2.height, 0, pixel_data_rt2.channels, pixel_data_rt2.channel_type, pixel_data_rt2.ptr()); // Right, rt
     glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGBA, pixel_data_up2.width, pixel_data_up2.height, 0, pixel_data_up2.channels, pixel_data_up2.channel_type, pixel_data_up2.ptr()); // Top, up
