@@ -73,11 +73,14 @@ class ApplicationSolar : public Application {
   void initializeAllOrbits();
   void switchAppearance();
   void initializeSkybox();
+  void initializeFrameBuffer(unsigned width = 1280u, unsigned height=960u);
+  void initializeFullScreenQuad();
 
   void drawPlanet() const;
   void drawStar() const;
   void drawOrbit() const;
   void drawSkyBox() const;
+  void drawFullScreenQuad() const;
 
   glm::fmat4 update_planet_transform(shared_ptr<Node> node) const;
 
@@ -142,6 +145,16 @@ class ApplicationSolar : public Application {
   glm::fmat4 m_view_projection;
 
   texture_object mars_normal_mapping;
+
+  //Assignment 5
+  texture_object texture_object_color_attachment;
+  texture_object render_buffer_object_depth_attachment;
+  texture_object frame_buffer;
+
+  //create a new model object for the screen quad
+  model_object full_screen_quad_object;
+
+
 };
 
 #endif

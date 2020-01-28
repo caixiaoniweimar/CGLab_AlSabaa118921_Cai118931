@@ -44,6 +44,10 @@ ApplicationSolar::ApplicationSolar(std::string const& resource_path)
   initializeAllStars();
   initializeAllOrbits();
 
+  //Assignment 5
+  initializeFrameBuffer();
+  initializeFullScreenQuad();
+
   /*for(auto const& p_holder: holder_nodes_pointers){
     p_holder -> setLocalTransform( glm::rotate(p_holder->getLocalTransform(), float(glfwGetTime())*p_holder->getSpeed(), glm::fvec3{0.0f, 1.0f, 0.0f}) );
     p_holder -> setWorldTransform( (scene_root -> getWorldTransform())*p_holder->getLocalTransform() );
@@ -65,6 +69,13 @@ ApplicationSolar::~ApplicationSolar() {
 
 void ApplicationSolar::render() const{
 
+  //Assignment 5
+  // Bind the Frame Buffer Object and render the scene to it and not to the Default one
+  glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer.handle);
+  // the bound Framebuffer is cleared
+  // The framebuffer Attachments must be cleared every frame before drawing them
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
   //Assignment 1
   drawPlanet();
   //sceneGraph->printGraph();
@@ -75,6 +86,9 @@ void ApplicationSolar::render() const{
 
   //Assignment 4
   drawSkyBox();
+
+  //Assignment 5
+  drawFullScreenQuad();
 
   //test methods, both work
   //auto neptune = (scene_root->getChildren("neptune_holder")).getChildren("neptune");
@@ -124,6 +138,9 @@ void ApplicationSolar::uploadProjection() {
 void ApplicationSolar::switchAppearance(){
   glUseProgram(m_shaders.at("planet").handle);
   glUniform1i(m_shaders.at("planet").u_locs.at("modelType"), modelType);
+
+  glUseProgram(m_shaders.at("fullscreenquad").handle);
+  glUniform1i(m_shaders.at("fullscreenquad").u_locs.at("modelType"), modelType);
 }
 
 // update uniform locations
@@ -137,6 +154,78 @@ void ApplicationSolar::uploadUniforms() {
 
 ///////////////////////////// intialisation functions /////////////////////////
 // load shader sources
+//Assignment 5
+void ApplicationSolar::initializeFrameBuffer(unsigned width, unsigned height){
+  // texture as Color Attachment
+  glActiveTexture(GL_TEXTURE4);  // 0:planets 1:skybox1 2:skybox2 3:normal mapping
+  glGenTextures(1, &texture_object_color_attachment.handle);
+  glBindTexture(GL_TEXTURE_2D, texture_object_color_attachment.handle);
+
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE ,NULL);
+
+  //render buffer as Depth Attachment
+  //generate Renderbuffer Object
+  glGenRenderbuffers(1, &render_buffer_object_depth_attachment.handle);
+  //bind RBO for formatting
+  glBindRenderbuffer(GL_RENDERBUFFER, render_buffer_object_depth_attachment.handle);
+  //specify RBO properties
+  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, width, height); 
+
+  //Framebuffer specification
+  //1. define Framebuffer
+  //generate Frame Buffer Object
+  glGenFramebuffers(1, &frame_buffer.handle);
+  //bind FBO for configuration
+  glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer.handle);
+
+  //2. define attachments
+  //specify Texture Object attachments, to color attachment; + texture handle; 0: highest level of texture, no mipmap
+  glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, texture_object_color_attachment.handle, 0);
+  //specify Renderbuffer Object attachments, to depth attachment; +render buffer handle
+  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, render_buffer_object_depth_attachment.handle);
+
+  //3. define draw buffers
+  //create array containing enums representing color attachments;   Framebuffer Object could hold n color attachment Textures and 1 depth attachment, Texture/Renderbuffer
+  GLenum draw_buffers[1] = {GL_COLOR_ATTACHMENT0};
+  //set the color attachment to receive fragments
+  glDrawBuffers(1, draw_buffers);
+
+  //4. check validity
+  //get the FBO status
+  GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+  //compare return value with the valid status value
+  if(status != GL_FRAMEBUFFER_COMPLETE){
+    cout<<"The Framebuffer can't be created successfully"<<endl;
+  }
+}
+
+void ApplicationSolar::initializeFullScreenQuad() {
+  model full_screen_quad_model = model_loader::obj(m_resource_path + "models/quad.obj", model::TEXCOORD);
+
+  glGenVertexArrays(1, &full_screen_quad_object.vertex_AO);
+  glBindVertexArray(full_screen_quad_object.vertex_AO);
+
+  glGenBuffers(1, &full_screen_quad_object.vertex_BO);
+  glBindBuffer(GL_ARRAY_BUFFER, full_screen_quad_object.vertex_BO);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(float) * full_screen_quad_model.data.size(), full_screen_quad_model.data.data(), GL_STATIC_DRAW);
+
+  //in_position in vertex_shader
+  glEnableVertexAttribArray(0);
+  glVertexAttribPointer(0, model::POSITION.components, model::POSITION.type, GL_FALSE, full_screen_quad_model.vertex_bytes, full_screen_quad_model.offsets[model::POSITION]);
+
+  //in_TexCoord; in vertex_shader -> calculate only texture coordinates;
+  glEnableVertexAttribArray(1);
+  glVertexAttribPointer(1, model::TEXCOORD.components, model::TEXCOORD.type, GL_FALSE, full_screen_quad_model.vertex_bytes, full_screen_quad_model.offsets[model::TEXCOORD]);
+
+  //Offscreen Rendering, Screen Quad, slide 11
+  //render them as a GL_TRIANGLE_STRIP;
+  full_screen_quad_object.draw_mode = GL_TRIANGLE_STRIP;
+  full_screen_quad_object.num_elements = GLsizei(full_screen_quad_model.indices.size());
+}
+
 
 //Assignment 3: use own planet.vert, planet.frag
 void ApplicationSolar::initializeShaderPrograms() {
@@ -180,6 +269,12 @@ void ApplicationSolar::initializeShaderPrograms() {
   m_shaders.at("skybox").u_locs["ProjectionMatrix"] = -1;
   m_shaders.at("skybox").u_locs["ModelMatrix"] = -1;
   m_shaders.at("skybox").u_locs["skybox"] = -1;
+
+  // Assignment 5
+  m_shaders.emplace("fullscreenquad", shader_program{{{ {GL_VERTEX_SHADER,m_resource_path + "shaders/fullscreenquad.vert"},
+                                              {GL_FRAGMENT_SHADER, m_resource_path + "shaders/fullscreenquad.frag"}}}});
+  m_shaders.at("fullscreenquad").u_locs["colorTexture"] = -1;
+  m_shaders.at("fullscreenquad").u_locs["modelType"] = -1;
 }
 
 // load models
@@ -744,6 +839,23 @@ void ApplicationSolar::drawSkyBox() const{
 
 }
 
+//Assignment 5
+void ApplicationSolar::drawFullScreenQuad() const{
+
+// in order to render to screen, bind again the default Framebuffer, 0
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+  glUseProgram(m_shaders.at("fullscreenquad").handle);
+  
+  glActiveTexture(GL_TEXTURE4); //-> color attachment
+  glBindTexture(GL_TEXTURE_2D, texture_object_color_attachment.handle);
+
+  glUniform1i(m_shaders.at("fullscreenquad").u_locs.at("colorTexture"), 4);
+
+  glBindVertexArray(full_screen_quad_object.vertex_AO);
+  glDrawArrays(full_screen_quad_object.draw_mode, 0, full_screen_quad_object.num_elements);
+}
+
 
 void ApplicationSolar::drawStar() const{
     // Drawing:
@@ -873,6 +985,24 @@ void ApplicationSolar::keyCallback(int key, int action, int mods) {
         modelType = 4;
         switchAppearance();
     }
+
+    else if(key == GLFW_KEY_7 && (action == GLFW_PRESS || action == GLFW_REPEAT )){ // Grayscale
+        modelType = 7;
+        switchAppearance();
+    }
+    else if(key == GLFW_KEY_8 && (action == GLFW_PRESS || action == GLFW_REPEAT )){ // horizontal mirroring
+        modelType = 8;
+        switchAppearance();
+    }
+    else if(key == GLFW_KEY_9 && (action == GLFW_PRESS || action == GLFW_REPEAT )){ // vertical mirroing
+        modelType = 9;
+        switchAppearance();
+    }
+    else if(key == GLFW_KEY_0 && (action == GLFW_PRESS || action == GLFW_REPEAT )){ // blur with 3*3 Gaussian Kernel
+        modelType = 0;
+        switchAppearance();
+    }
+
 }
 
 //handle delta mouse movement input
@@ -891,8 +1021,10 @@ void ApplicationSolar::mouseCallback(double pos_x, double pos_y) {
 void ApplicationSolar::resizeCallback(unsigned width, unsigned height) {
   // recalculate projection matrix for new aspect ration
   m_view_projection = utils::calculate_projection_matrix(float(width) / float(height));
+  initializeFrameBuffer(width, height);
   // upload new projection matrix
   uploadProjection();
+
 }
 
 
